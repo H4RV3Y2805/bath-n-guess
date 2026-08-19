@@ -120,6 +120,7 @@ button:active{transform:scale(.96)}
 .btn-winner.mum:hover{box-shadow:0 4px 16px #e74c8860}
 .btn-winner.dad:hover{box-shadow:0 4px 16px #3498db60}
 .btn-winner.aiden:hover{box-shadow:0 4px 16px #2ecc7160}
+.btn-winner:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
 .winner-recorded{
   color:var(--gold);font-weight:700;font-size:1rem;margin-top:8px;
   animation:popIn .3s ease;
@@ -173,6 +174,30 @@ button:active{transform:scale(.96)}
 }
 .btn-reset-scores:hover{color:var(--text);border-color:#ffffff30}
 
+/* Auth bar */
+.auth-bar{
+  width:100%;max-width:520px;display:flex;align-items:center;justify-content:center;
+  gap:10px;margin-bottom:12px;flex-wrap:wrap;
+}
+.btn-google{
+  background:#fff;color:#333;font-size:.85rem;font-weight:600;
+  padding:8px 20px;border-radius:20px;display:flex;align-items:center;gap:8px;
+  box-shadow:0 2px 8px #00000030;
+}
+.btn-google:hover{box-shadow:0 3px 12px #00000050}
+.btn-google img{width:18px;height:18px}
+.auth-user{
+  font-size:.8rem;color:var(--dim);display:flex;align-items:center;gap:8px;
+}
+.auth-user img{width:24px;height:24px;border-radius:50%}
+.auth-user span{color:var(--text);font-weight:600}
+.btn-signout{
+  background:transparent;color:var(--dim);font-size:.7rem;padding:4px 10px;
+  border:1px solid #ffffff20;border-radius:10px;
+}
+.btn-signout:hover{color:var(--text);border-color:#ffffff40}
+.auth-note{font-size:.7rem;color:var(--dim);text-align:center;margin-bottom:8px}
+
 .footer{margin-top:auto;padding-top:24px;color:#444;font-size:.7rem;text-align:center}
 
 /* Type colours */
@@ -194,6 +219,15 @@ button:active{transform:scale(.96)}
 
 <h1>Guess the Character!</h1>
 <p class="subtitle">Bath-time Edition</p>
+
+<!-- Auth -->
+<div class="auth-bar" id="auth-bar">
+  <button class="btn-google" id="btn-signin" onclick="googleSignIn()">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+    Sign in with Google
+  </button>
+</div>
+<div class="auth-note" id="auth-note">Sign in to record scores</div>
 
 <!-- Scoreboard -->
 <div class="scoreboard" id="scoreboard">
@@ -265,8 +299,11 @@ button:active{transform:scale(.96)}
   <button class="btn-reset-scores" onclick="resetScores()">Reset Scores</button>
 </div>
 
-<div class="footer">100% offline &middot; data saved on this device</div>
+<div class="footer">Scores synced via Firebase &middot; sign in to play</div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 // ── CHARACTER DATABASE ──
 
@@ -487,8 +524,57 @@ let roundWinnerRecorded = false;
 let shuffleBag = [];
 let lastPoolKey = '';
 
-// ── Firebase config ──
-const FB_DB = 'https://bath-n-guess-default-rtdb.europe-west1.firebasedatabase.app';
+// ── Firebase setup ──
+const firebaseConfig = {
+  apiKey: "AIzaSyAavzNt6ujjkxg9uhbXGto-vSiEL77hdnc",
+  authDomain: "bath-n-guess.firebaseapp.com",
+  databaseURL: "https://bath-n-guess-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "bath-n-guess",
+  storageBucket: "bath-n-guess.firebasestorage.app",
+  messagingSenderId: "225305279219",
+  appId: "1:225305279219:web:49fc45b0448b05876e9586"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+const provider = new firebase.auth.GoogleAuthProvider();
+
+let currentUser = null;
+
+// ── Auth ──
+function googleSignIn(){
+  auth.signInWithPopup(provider).catch(e => {
+    console.log('Sign-in failed:', e.message);
+    // Fallback for mobile: use redirect
+    auth.signInWithRedirect(provider);
+  });
+}
+
+function signOut(){
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  const bar = document.getElementById('auth-bar');
+  const note = document.getElementById('auth-note');
+  if(user){
+    bar.innerHTML = '<div class="auth-user">' +
+      (user.photoURL ? '<img src="'+user.photoURL+'" alt="">' : '') +
+      '<span>'+user.displayName+'</span></div>' +
+      '<button class="btn-signout" onclick="signOut()">Sign out</button>';
+    note.textContent = '';
+    // Enable winner buttons
+    document.querySelectorAll('.btn-winner').forEach(b => b.disabled = false);
+  }else{
+    bar.innerHTML = '<button class="btn-google" onclick="googleSignIn()">' +
+      '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">' +
+      'Sign in with Google</button>';
+    note.textContent = 'Sign in to record scores';
+    // Disable winner buttons
+    document.querySelectorAll('.btn-winner').forEach(b => b.disabled = true);
+  }
+});
 
 // ── localStorage helpers (local data: seen, favourites, totalPlayed) ──
 const STORE_KEY = 'pokemon_guess_v2';
@@ -503,44 +589,27 @@ function loadData(){
 }
 function saveData(d){localStorage.setItem(STORE_KEY,JSON.stringify(d))}
 
-// ── Firebase score sync ──
+// ── Firebase score sync (real-time listener, no polling) ──
 let cloudScores = {mum:0,dad:0,aiden:0};
 
-async function fbLoadScores(){
-  try{
-    const r = await fetch(FB_DB+'/scores.json');
-    const data = await r.json();
-    if(data && typeof data.mum==='number'){
-      cloudScores = data;
-      // Sync to local
-      const local = loadData();
-      local.scores = {...cloudScores};
-      saveData(local);
-      updateScoreboardUI();
-    }
-  }catch(e){console.log('Firebase read failed, using local scores');}
-}
-
-async function fbSaveScores(scores){
-  cloudScores = {...scores};
-  try{
-    await fetch(FB_DB+'/scores.json',{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(scores)
-    });
-  }catch(e){console.log('Firebase write failed, scores saved locally');}
-}
-
-// Poll for score changes every 5 seconds so both phones stay in sync
-setInterval(fbLoadScores, 5000);
+// Listen for real-time score changes from Firebase
+db.ref('scores').on('value', snapshot => {
+  const data = snapshot.val();
+  if(data && typeof data.mum === 'number'){
+    cloudScores = data;
+    const local = loadData();
+    local.scores = {...cloudScores};
+    saveData(local);
+    updateScoreboardUI();
+  }
+});
 
 // ── Init ──
 function init(){
   buildFranchiseFilter();
   buildGenFilter();
   updateStats();
-  fbLoadScores(); // load shared scores from Firebase
+  updateScoreboardUI(); // Firebase real-time listener will update when data arrives
   renderHistory();
 }
 
@@ -742,6 +811,7 @@ function revealClue(n){
 // ── Winner system ──
 function recordWinner(who){
   if(roundWinnerRecorded) return;
+  if(!currentUser){ alert('Please sign in first!'); return; }
   roundWinnerRecorded = true;
 
   cloudScores[who]++;
@@ -749,7 +819,7 @@ function recordWinner(who){
   const data = loadData();
   data.scores = {...cloudScores};
   saveData(data);
-  fbSaveScores(cloudScores);
+  db.ref('scores').set(cloudScores);
 
   updateScoreboardUI();
 
@@ -767,11 +837,12 @@ function updateScoreboardUI(){
 }
 
 function resetScores(){
+  if(!currentUser){ alert('Please sign in first!'); return; }
   cloudScores = {mum:0,dad:0,aiden:0};
   const data = loadData();
   data.scores = {mum:0,dad:0,aiden:0};
   saveData(data);
-  fbSaveScores(cloudScores);
+  db.ref('scores').set(cloudScores);
   updateScoreboardUI();
 }
 
