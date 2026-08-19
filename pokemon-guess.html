@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guess the Character!</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1a2e;--card:#16213e;--accent:#e94560;--accent2:#0f3460;
+  --gold:#f5c518;--text:#eee;--dim:#999;--green:#2ecc71;--blue:#3498db;
+  --radius:16px;
+}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px;
+  overflow-x:hidden;
+}
+h1{
+  font-size:2rem;text-align:center;margin:12px 0 4px;
+  background:linear-gradient(135deg,var(--gold),var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.subtitle{color:var(--dim);font-size:.85rem;margin-bottom:16px;text-align:center}
+
+/* Scoreboard */
+.scoreboard{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;
+}
+.score-card{
+  background:var(--card);border:1px solid #ffffff15;border-radius:var(--radius);
+  padding:10px 18px;text-align:center;min-width:90px;
+}
+.score-card .score-name{font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:2px}
+.score-card .score-value{font-size:1.6rem;font-weight:800;color:var(--gold)}
+.score-card.mum{border-color:#e74c8840}
+.score-card.mum .score-value{color:#e74c88}
+.score-card.dad{border-color:#3498db40}
+.score-card.dad .score-value{color:#3498db}
+.score-card.aiden{border-color:#2ecc7140}
+.score-card.aiden .score-value{color:#2ecc71}
+
+.top-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.stat-pill{
+  background:var(--card);border:1px solid #ffffff15;border-radius:20px;
+  padding:6px 14px;font-size:.8rem;color:var(--dim);
+}
+.stat-pill b{color:var(--gold)}
+button{
+  cursor:pointer;border:none;font-family:inherit;font-weight:600;
+  transition:transform .15s,box-shadow .15s;
+}
+button:active{transform:scale(.96)}
+.btn-random{
+  background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;
+  font-size:1.2rem;padding:14px 36px;border-radius:40px;
+  box-shadow:0 4px 20px #e9456050;letter-spacing:.5px;
+}
+.btn-random:hover{box-shadow:0 6px 28px #e9456080}
+.btn-small{
+  background:var(--accent2);color:var(--text);font-size:.85rem;
+  padding:8px 18px;border-radius:20px;
+}
+.btn-small:hover{background:#1a4a80}
+.game-area{
+  width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px;
+  margin-top:12px;
+}
+.clue-card{
+  background:var(--card);border:2px solid #ffffff10;border-radius:var(--radius);
+  padding:16px 18px;cursor:pointer;transition:border-color .3s,background .3s;
+  position:relative;overflow:hidden;
+}
+.clue-card.locked{opacity:.6}
+.clue-card.locked::after{
+  content:'Tap to reveal';position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;background:#16213ef0;
+  font-weight:600;color:var(--gold);font-size:.95rem;letter-spacing:.5px;
+}
+.clue-card.revealed{border-color:var(--gold);background:#1a2744}
+.clue-label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:4px}
+.clue-text{font-size:1rem;line-height:1.5}
+.reveal-section{text-align:center;margin:8px 0}
+.btn-reveal{
+  background:linear-gradient(135deg,var(--gold),#e67e22);color:#1a1a2e;
+  font-size:1.1rem;padding:12px 32px;border-radius:30px;
+  box-shadow:0 4px 16px #f5c51840;
+}
+.pokemon-reveal{
+  background:var(--card);border:2px solid var(--gold);border-radius:var(--radius);
+  padding:20px;text-align:center;animation:popIn .4s ease;
+}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.pokemon-name{font-size:2rem;font-weight:800;color:var(--gold);margin-bottom:12px}
+.facts-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;
+}
+.fact{background:#0d1b30;border-radius:10px;padding:10px 12px}
+.fact-label{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:2px}
+.fact-value{font-size:.95rem;font-weight:600}
+.type-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.type-badge{
+  padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:700;
+  color:#fff;text-transform:uppercase;letter-spacing:.5px;
+}
+
+/* Winner buttons */
+.winner-section{margin-top:14px}
+.winner-label{font-size:.8rem;color:var(--dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.winner-buttons{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.btn-winner{
+  font-size:1rem;padding:10px 24px;border-radius:24px;font-weight:700;
+  letter-spacing:.5px;transition:transform .15s,box-shadow .15s;
+}
+.btn-winner:active{transform:scale(.94)}
+.btn-winner.mum{background:linear-gradient(135deg,#e74c88,#c0392b);color:#fff}
+.btn-winner.dad{background:linear-gradient(135deg,#3498db,#2980b9);color:#fff}
+.btn-winner.aiden{background:linear-gradient(135deg,#2ecc71,#27ae60);color:#fff}
+.btn-winner.mum:hover{box-shadow:0 4px 16px #e74c8860}
+.btn-winner.dad:hover{box-shadow:0 4px 16px #3498db60}
+.btn-winner.aiden:hover{box-shadow:0 4px 16px #2ecc7160}
+.winner-recorded{
+  color:var(--gold);font-weight:700;font-size:1rem;margin-top:8px;
+  animation:popIn .3s ease;
+}
+
+.history-section{
+  width:100%;max-width:520px;margin-top:24px;
+}
+.history-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;
+}
+.history-header h3{font-size:.9rem;color:var(--dim)}
+.history-list{display:flex;flex-wrap:wrap;gap:6px}
+.history-chip{
+  background:var(--card);border:1px solid #ffffff10;border-radius:12px;
+  padding:4px 10px;font-size:.75rem;color:var(--dim);
+}
+.hidden{display:none!important}
+
+/* Franchise & gen filter */
+.filter-section{
+  width:100%;max-width:520px;margin-bottom:12px;
+}
+.filter-group{
+  display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;
+}
+.filter-group-label{
+  font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);
+  text-align:center;margin-bottom:4px;
+}
+.gen-filter{
+  display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;
+}
+.gen-btn{
+  background:var(--card);color:var(--dim);font-size:.72rem;
+  padding:4px 10px;border-radius:12px;border:1px solid #ffffff10;
+}
+.gen-btn.active{background:var(--accent2);color:var(--text);border-color:var(--blue)}
+.fran-btn{
+  background:var(--card);color:var(--dim);font-size:.76rem;
+  padding:5px 12px;border-radius:12px;border:1px solid #ffffff10;font-weight:600;
+}
+.fran-btn.active{color:var(--text);border-color:var(--blue)}
+.fran-btn.active.pokemon{background:#e94560}
+.fran-btn.active.minecraft{background:#5d8a3c}
+.fran-btn.active.bugsnax{background:#e67e22}
+.fran-btn.active.mario{background:#e4002b}
+.btn-reset-scores{
+  background:#333;color:var(--dim);font-size:.7rem;padding:4px 12px;border-radius:12px;
+  border:1px solid #ffffff10;margin-top:4px;
+}
+.btn-reset-scores:hover{color:var(--text);border-color:#ffffff30}
+
+.footer{margin-top:auto;padding-top:24px;color:#444;font-size:.7rem;text-align:center}
+
+/* Type colours */
+.type-normal{background:#a8a878}.type-fire{background:#f08030}.type-water{background:#6890f0}
+.type-electric{background:#f8d030;color:#333}.type-grass{background:#78c850}.type-ice{background:#98d8d8;color:#333}
+.type-fighting{background:#c03028}.type-poison{background:#a040a0}.type-ground{background:#e0c068;color:#333}
+.type-flying{background:#a890f0}.type-psychic{background:#f85888}.type-bug{background:#a8b820;color:#333}
+.type-rock{background:#b8a038}.type-ghost{background:#705898}.type-dragon{background:#7038f8}
+.type-dark{background:#705848}.type-steel{background:#b8b8d0;color:#333}.type-fairy{background:#ee99ac;color:#333}
+/* Franchise type colours */
+.type-hostile{background:#c0392b}.type-passive{background:#27ae60}.type-neutral{background:#7f8c8d}
+.type-boss{background:#8e44ad}.type-npc{background:#2980b9}.type-undead{background:#505050}
+.type-arthropod{background:#6b8e23}.type-grumpus{background:#e67e22}
+.type-hero{background:#e4002b}.type-villain{background:#6c3483}.type-power-up{background:#f39c12;color:#333}
+.type-ally{background:#1abc9c}.type-koopaling{background:#229954}
+</style>
+</head>
+<body>
+
+<h1>Guess the Character!</h1>
+<p class="subtitle">Bath-time Edition</p>
+
+<!-- Scoreboard -->
+<div class="scoreboard" id="scoreboard">
+  <div class="score-card mum"><div class="score-name">Mum</div><div class="score-value" id="score-mum">0</div></div>
+  <div class="score-card dad"><div class="score-name">Dad</div><div class="score-value" id="score-dad">0</div></div>
+  <div class="score-card aiden"><div class="score-name">Aiden</div><div class="score-value" id="score-aiden">0</div></div>
+</div>
+
+<div class="top-bar">
+  <span class="stat-pill">Seen: <b id="seen-count">0</b></span>
+  <span class="stat-pill">Round: <b id="total-count">0</b></span>
+</div>
+
+<!-- Franchise filters -->
+<div class="filter-section">
+  <div class="filter-group-label">Franchises</div>
+  <div class="filter-group" id="franchise-filter"></div>
+  <div class="filter-group-label" id="gen-label">Pokemon Generations</div>
+  <div class="gen-filter" id="gen-filter"></div>
+</div>
+
+<button class="btn-random" id="btn-random" onclick="pickRandom()">Random Character!</button>
+
+<div class="game-area hidden" id="game-area">
+  <div class="clue-card locked" id="clue-1" onclick="revealClue(1)">
+    <div class="clue-label">Clue 1</div>
+    <div class="clue-text" id="clue-text-1"></div>
+  </div>
+  <div class="clue-card locked" id="clue-2" onclick="revealClue(2)">
+    <div class="clue-label">Clue 2</div>
+    <div class="clue-text" id="clue-text-2"></div>
+  </div>
+  <div class="clue-card locked" id="clue-3" onclick="revealClue(3)">
+    <div class="clue-label">Clue 3</div>
+    <div class="clue-text" id="clue-text-3"></div>
+  </div>
+
+  <div class="pokemon-reveal hidden" id="pokemon-reveal">
+    <div class="pokemon-name" id="pokemon-name"></div>
+    <div class="facts-grid" id="facts-grid"></div>
+
+    <!-- Winner buttons -->
+    <div class="winner-section" id="winner-section">
+      <div class="winner-label">Who guessed it?</div>
+      <div class="winner-buttons" id="winner-buttons">
+        <button class="btn-winner mum" onclick="recordWinner('mum')">Mum</button>
+        <button class="btn-winner dad" onclick="recordWinner('dad')">Dad</button>
+        <button class="btn-winner aiden" onclick="recordWinner('aiden')">Aiden</button>
+      </div>
+      <div class="winner-recorded hidden" id="winner-recorded"></div>
+    </div>
+
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-small" onclick="pickRandom()">Next Character</button>
+      <button class="btn-small" id="btn-fav" onclick="toggleFav()">Add to Favourites</button>
+    </div>
+  </div>
+</div>
+
+<div class="history-section" id="history-section">
+  <div class="history-header">
+    <h3 id="history-title">Recently Seen</h3>
+    <button class="btn-small" onclick="toggleHistory()" id="btn-toggle-hist">Show Favourites</button>
+  </div>
+  <div class="history-list" id="history-list"></div>
+</div>
+
+<div style="text-align:center;margin-top:16px">
+  <button class="btn-reset-scores" onclick="resetScores()">Reset Scores</button>
+</div>
+
+<div class="footer">100% offline &middot; data saved on this device</div>
+
+<script>
+// ── CHARACTER DATABASE ──
+
+const POKEMON = [
+  // Gen 1
+  {name:"Bulbasaur",types:["Grass","Poison"],gen:1,game:"Red/Blue",category:"Seed Pokemon",height:"0.7m",weight:"6.9kg",clues:["I'm the very first Pokemon in the Pokedex.","I carry a plant bulb on my back that grows as I level up.","I'm one of the three starter Pokemon from the Kanto region."]},
+  {name:"Charmander",types:["Fire"],gen:1,game:"Red/Blue",category:"Lizard Pokemon",height:"0.6m",weight:"8.5kg",clues:["The flame on my tail shows how healthy I am.","I'm a small orange reptile who evolves into a dragon-like Pokemon.","I'm a Kanto starter that Ash famously rescued from the rain."]},
+  {name:"Squirtle",types:["Water"],gen:1,game:"Red/Blue",category:"Tiny Turtle Pokemon",height:"0.5m",weight:"9.0kg",clues:["I wear my home on my back and can hide inside it.","I'm a water-type Kanto starter Pokemon.","My squad once wore cool sunglasses and fought fires."]},
+  {name:"Pikachu",types:["Electric"],gen:1,game:"Red/Blue",category:"Mouse Pokemon",height:"0.4m",weight:"6.0kg",clues:["I'm the most famous Pokemon in the world and the mascot of the franchise.","I store electricity in my red cheek pouches.","My trainer is Ash Ketchum, and I refuse to stay in my Poke Ball."]},
+  {name:"Eevee",types:["Normal"],gen:1,game:"Red/Blue",category:"Evolution Pokemon",height:"0.3m",weight:"6.5kg",clues:["I can evolve into more different Pokemon than almost any other species.","I have a fluffy brown coat and a bushy tail.","My evolutions include Vaporeon, Jolteon, Flareon, and many more."]},
+  {name:"Mewtwo",types:["Psychic"],gen:1,game:"Red/Blue",category:"Genetic Pokemon",height:"2.0m",weight:"122.0kg",clues:["I was created by scientists using genetic engineering.","I'm one of the most powerful Psychic-type Pokemon ever.","I was cloned from the DNA of another legendary Pokemon called Mew."]},
+  {name:"Gengar",types:["Ghost","Poison"],gen:1,game:"Red/Blue",category:"Shadow Pokemon",height:"1.5m",weight:"40.5kg",clues:["I hide in shadows and the temperature drops when I'm nearby.","I'm a purple, grinning Ghost-type with a spiky body.","I'm the final evolution of Gastly and I love playing pranks."]},
+  {name:"Snorlax",types:["Normal"],gen:1,game:"Red/Blue",category:"Sleeping Pokemon",height:"2.1m",weight:"460.0kg",clues:["I eat 400 kilograms of food every day.","I block paths by sleeping in the middle of them.","You need a Poke Flute to wake me up."]},
+  {name:"Charizard",types:["Fire","Flying"],gen:1,game:"Red/Blue",category:"Flame Pokemon",height:"1.7m",weight:"90.5kg",clues:["I can Mega Evolve into two different forms, X and Y.","My flame burns hot enough to melt boulders.","I'm the final evolution of a Kanto fire starter and I look like a dragon."]},
+  {name:"Jigglypuff",types:["Normal","Fairy"],gen:1,game:"Red/Blue",category:"Balloon Pokemon",height:"0.5m",weight:"5.5kg",clues:["I sing a lullaby that puts everyone to sleep.","I get angry and draw on the faces of anyone who falls asleep during my song.","I'm a round, pink, balloon-like Pokemon with big blue eyes."]},
+  {name:"Meowth",types:["Normal"],gen:1,game:"Red/Blue",category:"Scratch Cat Pokemon",height:"0.4m",weight:"4.2kg",clues:["I love collecting shiny coins and round objects.","I have a gold coin charm on my forehead.","In the anime, I'm part of Team Rocket and I can talk like a human."]},
+  {name:"Psyduck",types:["Water"],gen:1,game:"Red/Blue",category:"Duck Pokemon",height:"0.8m",weight:"19.6kg",clues:["I always have a headache, and it gives me psychic powers.","I'm a yellow duck Pokemon who holds my head a lot.","My trainer Misty finds me very frustrating."]},
+  {name:"Gyarados",types:["Water","Flying"],gen:1,game:"Red/Blue",category:"Atrocious Pokemon",height:"6.5m",weight:"235.0kg",clues:["I'm one of the most fearsome Pokemon in the sea.","I evolved from one of the weakest Pokemon of all.","I'm a giant blue serpent-dragon who can destroy entire cities in a rage."]},
+  {name:"Magikarp",types:["Water"],gen:1,game:"Red/Blue",category:"Fish Pokemon",height:"0.9m",weight:"10.0kg",clues:["I'm famous for being almost completely useless in battle.","All I really know how to do is Splash around.","But if you're patient with me, I evolve into something truly terrifying."]},
+  {name:"Dragonite",types:["Dragon","Flying"],gen:1,game:"Red/Blue",category:"Dragon Pokemon",height:"2.2m",weight:"210.0kg",clues:["I can fly around the entire globe in about 16 hours.","I'm a friendly orange dragon-like Pokemon.","I'm the final evolution of Dratini and the first pseudo-legendary."]},
+  {name:"Mew",types:["Psychic"],gen:1,game:"Red/Blue",category:"New Species Pokemon",height:"0.4m",weight:"4.0kg",clues:["Scientists believe I contain the DNA of every single Pokemon.","I'm a tiny pink Psychic-type who can learn any move.","I was one of the rarest original legendary Pokemon, hidden as a secret."]},
+  {name:"Alakazam",types:["Psychic"],gen:1,game:"Red/Blue",category:"Psi Pokemon",height:"1.5m",weight:"48.0kg",clues:["My IQ is said to be over 5,000.","I hold a silver spoon in each hand to boost my psychic powers.","I evolved from Kadabra, who evolved from Abra."]},
+  {name:"Machamp",types:["Fighting"],gen:1,game:"Red/Blue",category:"Superpower Pokemon",height:"1.6m",weight:"130.0kg",clues:["I have four arms and can throw 500 punches per second.","I'm the final evolution of Machop.","I'm one of the strongest Fighting-type Pokemon from Kanto."]},
+  {name:"Lapras",types:["Water","Ice"],gen:1,game:"Red/Blue",category:"Transport Pokemon",height:"2.5m",weight:"220.0kg",clues:["I love to carry people across the sea on my back.","I'm a gentle blue dinosaur-like Pokemon with a shell.","I was once nearly hunted to extinction but am now protected."]},
+  {name:"Articuno",types:["Ice","Flying"],gen:1,game:"Red/Blue",category:"Freeze Pokemon",height:"1.7m",weight:"55.4kg",clues:["I'm one of three legendary birds from the Kanto region.","I live in frozen mountains and can create blizzards.","I'm a majestic blue bird with a long, flowing tail."]},
+  {name:"Zapdos",types:["Electric","Flying"],gen:1,game:"Red/Blue",category:"Electric Pokemon",height:"1.6m",weight:"52.6kg",clues:["I'm one of three legendary birds from the Kanto region.","My body crackles with electricity and I cause thunderstorms.","I'm a spiky yellow bird that lives in storm clouds."]},
+  {name:"Moltres",types:["Fire","Flying"],gen:1,game:"Red/Blue",category:"Flame Pokemon",height:"2.0m",weight:"60.0kg",clues:["I'm one of three legendary birds from the Kanto region.","My entire body is covered in blazing flames.","I'm said to bring early spring to cold lands when I appear."]},
+  {name:"Ditto",types:["Normal"],gen:1,game:"Red/Blue",category:"Transform Pokemon",height:"0.3m",weight:"4.0kg",clues:["I can reshape my body to look exactly like any other Pokemon.","I'm a small pink blob with a simple smiley face.","I'm very popular at the Pokemon Day Care for breeding."]},
+  {name:"Vulpix",types:["Fire"],gen:1,game:"Red/Blue",category:"Fox Pokemon",height:"0.6m",weight:"9.9kg",clues:["I'm born with just one white tail that splits as I grow.","I'm a small red-brown fox Pokemon.","I also have a beautiful Ice-type form from the Alola region."]},
+  {name:"Arcanine",types:["Fire"],gen:1,game:"Red/Blue",category:"Legendary Pokemon",height:"1.9m",weight:"155.0kg",clues:["In ancient Eastern legends, I was considered a legendary Pokemon.","I can run 10,000 kilometres in a single day.","I'm a majestic, tiger-striped canine that evolves with a Fire Stone."]},
+  {name:"Blastoise",types:["Water"],gen:1,game:"Red/Blue",category:"Shellfish Pokemon",height:"1.6m",weight:"85.5kg",clues:["I have powerful water cannons built into my shell.","I'm the final evolution of a Kanto water-type starter.","My water jets can punch through thick steel."]},
+  {name:"Venusaur",types:["Grass","Poison"],gen:1,game:"Red/Blue",category:"Seed Pokemon",height:"2.0m",weight:"100.0kg",clues:["The flower on my back blooms when it absorbs enough sunlight.","I'm the final evolution of the very first Pokemon in the Pokedex.","I'm a large toad-like Grass/Poison-type from Kanto."]},
+  {name:"Abra",types:["Psychic"],gen:1,game:"Red/Blue",category:"Psi Pokemon",height:"0.9m",weight:"19.5kg",clues:["I sleep for 18 hours a day.","I teleport away if I sense danger, even while sleeping.","I'm very hard to catch because I flee immediately."]},
+  {name:"Geodude",types:["Rock","Ground"],gen:1,game:"Red/Blue",category:"Rock Pokemon",height:"0.4m",weight:"20.0kg",clues:["I look like a rock with arms and an angry face.","I'm often found in caves and mountains.","I'm commonly used by Rock-type gym leaders like Brock."]},
+  {name:"Onix",types:["Rock","Ground"],gen:1,game:"Red/Blue",category:"Rock Snake Pokemon",height:"8.8m",weight:"210.0kg",clues:["I'm a massive snake made entirely of boulders.","Brock's most famous partner Pokemon is one of me.","I can evolve into a Steel-type Pokemon called Steelix."]},
+
+  // Gen 2
+  {name:"Chikorita",types:["Grass"],gen:2,game:"Gold/Silver",category:"Leaf Pokemon",height:"0.9m",weight:"6.4kg",clues:["I have a large leaf on top of my head that I use to sense temperature.","I'm a gentle green dinosaur-like starter Pokemon.","I'm from the Johto region and I love sunbathing."]},
+  {name:"Cyndaquil",types:["Fire"],gen:2,game:"Gold/Silver",category:"Fire Mouse Pokemon",height:"0.5m",weight:"7.9kg",clues:["Flames shoot from my back when I'm startled or angry.","I'm a small, shy fire-type starter from the Johto region.","I curl into a ball to protect myself and look like a porcupine."]},
+  {name:"Totodile",types:["Water"],gen:2,game:"Gold/Silver",category:"Big Jaw Pokemon",height:"0.6m",weight:"9.5kg",clues:["I have powerful jaws and I love to chomp on everything.","I'm a cheerful blue crocodile Pokemon.","I'm a water-type starter from the Johto region."]},
+  {name:"Togepi",types:["Fairy"],gen:2,game:"Gold/Silver",category:"Spike Ball Pokemon",height:"0.3m",weight:"1.5kg",clues:["I'm still inside my egg shell, with just my head poking out.","I store happiness inside my shell and share it with kind people.","Misty raised one of me in the anime after my egg hatched."]},
+  {name:"Lugia",types:["Psychic","Flying"],gen:2,game:"Gold/Silver",category:"Diving Pokemon",height:"5.2m",weight:"216.0kg",clues:["I live deep at the bottom of the ocean to protect the world from my power.","A single flap of my wings can cause a 40-day storm.","I'm the guardian of the seas and the mascot of Pokemon Silver."]},
+  {name:"Ho-Oh",types:["Fire","Flying"],gen:2,game:"Gold/Silver",category:"Rainbow Pokemon",height:"3.8m",weight:"199.0kg",clues:["A rainbow appears wherever I fly.","I revived three Pokemon from the Burned Tower, creating the legendary beasts.","I'm the mascot of Pokemon Gold and I resemble a phoenix."]},
+  {name:"Tyranitar",types:["Rock","Dark"],gen:2,game:"Gold/Silver",category:"Armor Pokemon",height:"2.0m",weight:"202.0kg",clues:["I'm so powerful that I can topple mountains and bury rivers.","I have a body like armour plating and I'm incredibly tough.","I'm a pseudo-legendary Pokemon that looks like Godzilla."]},
+  {name:"Umbreon",types:["Dark"],gen:2,game:"Gold/Silver",category:"Moonlight Pokemon",height:"1.0m",weight:"27.0kg",clues:["My rings glow in the moonlight.","I evolved from a certain Normal-type Pokemon through friendship at night.","I'm a sleek black fox-like Pokemon and a Dark-type Eeveelution."]},
+  {name:"Espeon",types:["Psychic"],gen:2,game:"Gold/Silver",category:"Sun Pokemon",height:"0.9m",weight:"26.5kg",clues:["The jewel on my forehead glows when I use psychic power.","I evolved from a certain Normal-type through friendship during the day.","I'm a lavender cat-like Psychic-type Eeveelution."]},
+  {name:"Scizor",types:["Bug","Steel"],gen:2,game:"Gold/Silver",category:"Pincer Pokemon",height:"1.8m",weight:"118.0kg",clues:["My steel-hard body is almost impossible to damage.","I have powerful pincers with eye-like patterns to intimidate foes.","I evolved from Scyther when traded holding a Metal Coat."]},
+  {name:"Suicune",types:["Water"],gen:2,game:"Gold/Silver",category:"Aurora Pokemon",height:"2.0m",weight:"187.0kg",clues:["I can purify dirty water just by touching it.","I have a flowing purple mane that looks like a northern wind.","I'm one of three legendary beasts revived by Ho-Oh."]},
+  {name:"Celebi",types:["Psychic","Grass"],gen:2,game:"Gold/Silver",category:"Time Travel Pokemon",height:"0.6m",weight:"5.0kg",clues:["I can travel through time.","I'm a small green fairy-like Pokemon who protects forests.","I'm a mythical Pokemon from the Johto region."]},
+
+  // Gen 3
+  {name:"Treecko",types:["Grass"],gen:3,game:"Ruby/Sapphire",category:"Wood Gecko Pokemon",height:"0.5m",weight:"5.0kg",clues:["I can walk on walls and ceilings using the tiny hooks on my feet.","I'm a cool, calm green gecko Pokemon.","I'm a grass-type starter from the Hoenn region."]},
+  {name:"Mudkip",types:["Water"],gen:3,game:"Ruby/Sapphire",category:"Mud Fish Pokemon",height:"0.4m",weight:"7.6kg",clues:["The fin on my head acts as a radar to sense water currents.","I became a massive internet meme: 'So I herd you liek me.'","I'm a cute blue amphibian starter from the Hoenn region."]},
+  {name:"Gardevoir",types:["Psychic","Fairy"],gen:3,game:"Ruby/Sapphire",category:"Embrace Pokemon",height:"1.6m",weight:"48.4kg",clues:["I will protect my trainer even at the cost of my own life.","I can sense my trainer's emotions and create small black holes.","I'm an elegant, graceful Psychic/Fairy-type that looks like it wears a ballgown."]},
+  {name:"Rayquaza",types:["Dragon","Flying"],gen:3,game:"Ruby/Sapphire",category:"Sky High Pokemon",height:"7.0m",weight:"206.5kg",clues:["I live in the ozone layer far above the clouds.","I stopped Groudon and Kyogre from destroying the world.","I'm a long green serpent-dragon and the mascot of Pokemon Emerald."]},
+  {name:"Kyogre",types:["Water"],gen:3,game:"Ruby/Sapphire",category:"Sea Basin Pokemon",height:"4.5m",weight:"352.0kg",clues:["I have the power to expand the oceans.","I'm an ancient legendary Pokemon who battled Groudon.","I'm a massive blue whale-like creature and the mascot of Pokemon Sapphire."]},
+  {name:"Groudon",types:["Ground"],gen:3,game:"Ruby/Sapphire",category:"Continent Pokemon",height:"3.5m",weight:"950.0kg",clues:["I have the power to expand the continents and evaporate water.","I'm an ancient legendary Pokemon who battled Kyogre.","I'm a massive red dinosaur-like creature and the mascot of Pokemon Ruby."]},
+  {name:"Blaziken",types:["Fire","Fighting"],gen:3,game:"Ruby/Sapphire",category:"Blaze Pokemon",height:"1.9m",weight:"52.0kg",clues:["I can clear a 30-storey building in a single leap.","I'm a bipedal chicken-like Pokemon with fiery wrists.","I'm the final evolution of the Hoenn fire starter and was the first Fire/Fighting type."]},
+  {name:"Absol",types:["Dark"],gen:3,game:"Ruby/Sapphire",category:"Disaster Pokemon",height:"1.2m",weight:"47.0kg",clues:["I appear before natural disasters to warn people, but they blame me instead.","I have a scythe-like horn on the side of my head.","I'm a white and dark-blue Dark-type often misunderstood as bringing bad luck."]},
+  {name:"Salamence",types:["Dragon","Flying"],gen:3,game:"Ruby/Sapphire",category:"Dragon Pokemon",height:"1.5m",weight:"102.6kg",clues:["I dreamed so hard about flying that I actually grew wings.","I'm a fierce blue dragon with red wings.","I'm a pseudo-legendary from the Hoenn region."]},
+  {name:"Metagross",types:["Steel","Psychic"],gen:3,game:"Ruby/Sapphire",category:"Iron Leg Pokemon",height:"1.6m",weight:"550.0kg",clues:["I'm formed from two Metang fusing together, giving me four brains.","I can crunch anything with my four steel legs.","I'm Steven Stone's signature Pokemon and a Steel/Psychic pseudo-legendary."]},
+
+  // Gen 4
+  {name:"Piplup",types:["Water"],gen:4,game:"Diamond/Pearl",category:"Penguin Pokemon",height:"0.4m",weight:"5.2kg",clues:["I'm a proud little Pokemon who doesn't like accepting food from people.","I'm a small blue penguin from the Sinnoh region.","Dawn chose me as her starter in the anime."]},
+  {name:"Lucario",types:["Fighting","Steel"],gen:4,game:"Diamond/Pearl",category:"Aura Pokemon",height:"1.2m",weight:"54.0kg",clues:["I can sense and manipulate a life energy called Aura.","I'm a blue and black jackal-like Pokemon.","I was the first Pokemon to Mega Evolve in the anime."]},
+  {name:"Garchomp",types:["Dragon","Ground"],gen:4,game:"Diamond/Pearl",category:"Mach Pokemon",height:"1.9m",weight:"95.0kg",clues:["I can fly at the speed of a jet aircraft.","I'm Cynthia's most powerful Pokemon.","I'm a land-shark pseudo-legendary from Sinnoh."]},
+  {name:"Dialga",types:["Steel","Dragon"],gen:4,game:"Diamond/Pearl",category:"Temporal Pokemon",height:"5.4m",weight:"683.0kg",clues:["I have complete control over time itself.","I'm the mascot of Pokemon Diamond.","I'm a massive blue Steel/Dragon legendary."]},
+  {name:"Palkia",types:["Water","Dragon"],gen:4,game:"Diamond/Pearl",category:"Spatial Pokemon",height:"4.2m",weight:"336.0kg",clues:["I have the power to warp space and create alternate dimensions.","I'm the mascot of Pokemon Pearl.","I'm a large pink and purple Water/Dragon legendary."]},
+  {name:"Giratina",types:["Ghost","Dragon"],gen:4,game:"Diamond/Pearl",category:"Renegade Pokemon",height:"4.5m",weight:"750.0kg",clues:["I was banished to another dimension for being too violent.","I live in the Distortion World where physics don't apply.","I'm the mascot of Pokemon Platinum and a Ghost/Dragon legendary."]},
+  {name:"Darkrai",types:["Dark"],gen:4,game:"Diamond/Pearl",category:"Pitch-Black Pokemon",height:"1.5m",weight:"50.5kg",clues:["I cause terrible nightmares to anyone nearby, even though I don't mean to.","I'm a shadowy, phantom-like Dark-type mythical Pokemon.","I'm the rival of Cresselia, who cures the nightmares I cause."]},
+  {name:"Arceus",types:["Normal"],gen:4,game:"Diamond/Pearl",category:"Alpha Pokemon",height:"3.2m",weight:"320.0kg",clues:["I'm said to have created the entire Pokemon universe.","I can change my type using special plates.","I'm known as the god of all Pokemon."]},
+  {name:"Leafeon",types:["Grass"],gen:4,game:"Diamond/Pearl",category:"Verdant Pokemon",height:"1.0m",weight:"25.5kg",clues:["I photosynthesise like a plant to create clean air.","I evolved near a mossy rock covered in nature's energy.","I'm a Grass-type Eeveelution with leaf-shaped ears and tail."]},
+  {name:"Glaceon",types:["Ice"],gen:4,game:"Diamond/Pearl",category:"Fresh Snow Pokemon",height:"0.8m",weight:"25.9kg",clues:["I can freeze the air around me and create diamond dust.","I evolved near an icy rock in a frozen cave.","I'm an Ice-type Eeveelution with a cool blue coat."]},
+  {name:"Rotom",types:["Electric","Ghost"],gen:4,game:"Diamond/Pearl",category:"Plasma Pokemon",height:"0.3m",weight:"0.3kg",clues:["I can possess electrical appliances and change my form.","I power the Pokedex in the Alola region.","I'm a small, mischievous Electric/Ghost-type that loves pranking people."]},
+
+  // Gen 5
+  {name:"Zoroark",types:["Dark"],gen:5,game:"Black/White",category:"Illusion Fox Pokemon",height:"1.6m",weight:"81.1kg",clues:["I can create incredibly realistic illusions to trick people and Pokemon.","I'm fiercely protective of my pack, especially my child Zorua.","I'm a dark grey and red fox with a massive mane."]},
+  {name:"Reshiram",types:["Dragon","Fire"],gen:5,game:"Black/White",category:"Vast White Pokemon",height:"3.2m",weight:"330.0kg",clues:["My tail is a blazing engine that can scorch everything.","I represent truth and I'm the mascot of Pokemon Black.","I'm a majestic white Dragon/Fire legendary from Unova."]},
+  {name:"Zekrom",types:["Dragon","Electric"],gen:5,game:"Black/White",category:"Deep Black Pokemon",height:"2.9m",weight:"345.0kg",clues:["My tail generates enormous amounts of electricity.","I represent ideals and I'm the mascot of Pokemon White.","I'm a powerful black Dragon/Electric legendary from Unova."]},
+  {name:"Hydreigon",types:["Dark","Dragon"],gen:5,game:"Black/White",category:"Brutal Pokemon",height:"1.8m",weight:"160.0kg",clues:["I have three heads, though only the middle one has a real brain.","I destroy everything in my path without mercy.","I'm a Dark/Dragon pseudo-legendary that looks like a hydra."]},
+  {name:"Volcarona",types:["Bug","Fire"],gen:5,game:"Black/White",category:"Sun Pokemon",height:"1.6m",weight:"46.0kg",clues:["When volcanic ash blocked the sun, I replaced it with my flames.","I have six fiery orange wings.","I'm a powerful Bug/Fire-type moth from the Unova region."]},
+  {name:"Genesect",types:["Bug","Steel"],gen:5,game:"Black/White",category:"Paleozoic Pokemon",height:"1.5m",weight:"82.5kg",clues:["I'm an ancient Bug-type that was revived and modified by Team Plasma.","I have a giant cannon on my back.","I'm a mythical Bug/Steel-type cyborg Pokemon."]},
+
+  // Gen 6
+  {name:"Greninja",types:["Water","Dark"],gen:6,game:"X/Y",category:"Ninja Pokemon",height:"1.5m",weight:"40.0kg",clues:["I compress water into razor-sharp throwing stars.","I have a special bond form where I merge with my trainer's appearance.","I'm a ninja frog and the final evolution of Froakie."]},
+  {name:"Xerneas",types:["Fairy"],gen:6,game:"X/Y",category:"Life Pokemon",height:"3.0m",weight:"215.0kg",clues:["I can share eternal life and my antlers glow in rainbow colours.","I'm a majestic stag-like Pokemon.","I'm the mascot of Pokemon X and the embodiment of life."]},
+  {name:"Yveltal",types:["Dark","Flying"],gen:6,game:"X/Y",category:"Destruction Pokemon",height:"5.8m",weight:"203.0kg",clues:["When I spread my wings, I absorb the life force of every living thing nearby.","I'm a massive red and black bird-dragon.","I'm the mascot of Pokemon Y and the embodiment of destruction."]},
+  {name:"Sylveon",types:["Fairy"],gen:6,game:"X/Y",category:"Intertwining Pokemon",height:"1.0m",weight:"23.5kg",clues:["I wrap my ribbon-like feelers around my trainer's arm to sense their feelings.","I can calm down fights by sending a soothing aura from my feelers.","I'm a Fairy-type Eeveelution with bows and flowing ribbons."]},
+  {name:"Aegislash",types:["Steel","Ghost"],gen:6,game:"X/Y",category:"Royal Sword Pokemon",height:"1.7m",weight:"53.0kg",clues:["I can switch between attack mode and defence mode mid-battle.","I'm literally a haunted sword and shield.","Kings in the Pokemon world used my power to rule."]},
+  {name:"Goodra",types:["Dragon"],gen:6,game:"X/Y",category:"Dragon Pokemon",height:"2.0m",weight:"150.5kg",clues:["I'm covered in slimy goo and love hugging my trainer.","I'm the friendliest dragon you'll ever meet, despite my power.","I'm a pseudo-legendary Dragon-type that looks like a snail."]},
+  {name:"Hawlucha",types:["Fighting","Flying"],gen:6,game:"X/Y",category:"Wrestling Pokemon",height:"0.8m",weight:"21.5kg",clues:["I'm a masked wrestler who fights with elegant aerial moves.","Despite my small size, I can take on much larger opponents.","I'm a Fighting/Flying luchador bird from the Kalos region."]},
+
+  // Gen 7
+  {name:"Decidueye",types:["Grass","Ghost"],gen:7,game:"Sun/Moon",category:"Arrow Quill Pokemon",height:"1.6m",weight:"36.6kg",clues:["I can shoot arrow-quills from my wings with perfect accuracy.","I'm a hooded owl archer who hides in the shadows.","I'm the final evolution of Rowlet, the Alolan grass starter."]},
+  {name:"Mimikyu",types:["Ghost","Fairy"],gen:7,game:"Sun/Moon",category:"Disguise Pokemon",height:"0.2m",weight:"0.7kg",clues:["Nobody has ever seen what I really look like under my disguise.","I wear a homemade costume because I'm lonely and want to be loved.","My disguise is shaped like the most popular Pokemon of all time."]},
+  {name:"Solgaleo",types:["Psychic","Steel"],gen:7,game:"Sun/Moon",category:"Sunne Pokemon",height:"3.4m",weight:"230.0kg",clues:["I radiate light so intense that I turn night into day.","I can open Ultra Wormholes to travel between dimensions.","I'm a lion-like legendary and the mascot of Pokemon Sun."]},
+  {name:"Lunala",types:["Psychic","Ghost"],gen:7,game:"Sun/Moon",category:"Moone Pokemon",height:"4.0m",weight:"120.0kg",clues:["I absorb light and turn it into darkness.","My wings spread out to look like a crescent moon.","I'm a bat-like legendary and the mascot of Pokemon Moon."]},
+  {name:"Rowlet",types:["Grass","Flying"],gen:7,game:"Sun/Moon",category:"Grass Quill Pokemon",height:"0.3m",weight:"1.5kg",clues:["I can rotate my head almost 180 degrees.","I attack by kicking sharp-edged leaves from my wings.","I'm a cute round owl starter from the Alola region."]},
+  {name:"Alolan Vulpix",types:["Ice"],gen:7,game:"Sun/Moon",category:"Fox Pokemon",height:"0.6m",weight:"9.9kg",clues:["I'm an ice-cold variant of a classic Kanto fire Pokemon.","My white fur and blue-tipped tails are stunningly beautiful.","I live on a snowy mountain in the Alola region."]},
+  {name:"Marshadow",types:["Fighting","Ghost"],gen:7,game:"Sun/Moon",category:"Gloomdweller Pokemon",height:"0.7m",weight:"22.2kg",clues:["I hide in the shadows of others and copy their movements.","I'm a tiny mythical Fighting/Ghost-type.","When I power up, green flames appear on my head and arms."]},
+
+  // Gen 8
+  {name:"Dragapult",types:["Dragon","Ghost"],gen:8,game:"Sword/Shield",category:"Stealth Pokemon",height:"3.0m",weight:"50.0kg",clues:["I launch my babies from the horns on my head like missiles, and they love it.","I can fly at speeds of 120 mph while invisible.","I'm a Dragon/Ghost pseudo-legendary from the Galar region."]},
+  {name:"Zacian",types:["Fairy","Steel"],gen:8,game:"Sword/Shield",category:"Warrior Pokemon",height:"2.8m",weight:"110.0kg",clues:["I hold a legendary sword in my mouth.","I can cut through anything, even the sky itself.","I'm a wolf-like legendary and the mascot of Pokemon Sword."]},
+  {name:"Zamazenta",types:["Fighting","Steel"],gen:8,game:"Sword/Shield",category:"Warrior Pokemon",height:"2.9m",weight:"210.0kg",clues:["My mane transforms into a massive shield.","I can deflect any attack, no matter how powerful.","I'm a wolf-like legendary and the mascot of Pokemon Shield."]},
+  {name:"Corviknight",types:["Flying","Steel"],gen:8,game:"Sword/Shield",category:"Raven Pokemon",height:"2.2m",weight:"75.0kg",clues:["I work as a flying taxi service in the Galar region.","My steel armour makes me the strongest bird in the sky.","I'm a large black armoured raven Pokemon."]},
+  {name:"Eternatus",types:["Poison","Dragon"],gen:8,game:"Sword/Shield",category:"Gigantic Pokemon",height:"20.0m",weight:"950.0kg",clues:["I fell from space inside a meteor 20,000 years ago.","I'm the source of the Dynamax energy in the Galar region.","I have a special form called Eternamax that's the tallest Pokemon ever."]},
+  {name:"Cinderace",types:["Fire"],gen:8,game:"Sword/Shield",category:"Striker Pokemon",height:"1.4m",weight:"33.0kg",clues:["I kick a pebble until it's a burning fireball and score goals with it.","I'm a football-playing rabbit Pokemon.","I'm the final evolution of the Galar fire starter Scorbunny."]},
+  {name:"Toxtricity",types:["Electric","Poison"],gen:8,game:"Sword/Shield",category:"Punk Pokemon",height:"1.6m",weight:"40.0kg",clues:["I generate electricity by playing my chest like a guitar.","I come in two forms: Amped and Low Key.","I'm a punk rock lizard Pokemon from Galar."]},
+
+  // Gen 9
+  {name:"Koraidon",types:["Fighting","Dragon"],gen:9,game:"Scarlet/Violet",category:"Paradox Pokemon",height:"2.5m",weight:"303.0kg",clues:["I'm an ancient legendary that uses my throat sac to move at incredible speeds.","I can transform between different travel modes: running, swimming, and gliding.","I'm the mascot of Pokemon Scarlet and look like a prehistoric motorcycle-dinosaur."]},
+  {name:"Miraidon",types:["Electric","Dragon"],gen:9,game:"Scarlet/Violet",category:"Paradox Pokemon",height:"3.5m",weight:"240.0kg",clues:["I'm a futuristic legendary that generates energy from my tail.","I can transform between different travel modes: running, swimming, and gliding.","I'm the mascot of Pokemon Violet and look like a futuristic motorcycle-dragon."]},
+  {name:"Meowscarada",types:["Grass","Dark"],gen:9,game:"Scarlet/Violet",category:"Magician Pokemon",height:"1.5m",weight:"31.2kg",clues:["I use my flower-bomb tricks like a stage magician.","I hide in the shadows and use misdirection to confuse my foes.","I'm the final evolution of Sprigatito, the Paldean grass starter cat."]},
+  {name:"Tinkaton",types:["Fairy","Steel"],gen:9,game:"Scarlet/Violet",category:"Hammer Pokemon",height:"0.7m",weight:"112.8kg",clues:["I built a massive hammer out of scrap metal that's 10 times my weight.","I use my hammer to smack Corviknight out of the sky for fun.","I'm a tiny pink Fairy/Steel Pokemon with a gigantic DIY weapon."]},
+  {name:"Gholdengo",types:["Steel","Ghost"],gen:9,game:"Scarlet/Violet",category:"Coin Entity Pokemon",height:"1.2m",weight:"30.0kg",clues:["My entire body is made of 1,000 coins stacked together.","I'm immune to status moves thanks to my ability Good as Gold.","I'm a golden surfer-dude Pokemon made entirely of treasure."]},
+  {name:"Annihilape",types:["Fighting","Ghost"],gen:9,game:"Scarlet/Violet",category:"Rage Monkey Pokemon",height:"1.2m",weight:"56.0kg",clues:["I evolved when my anger became so intense that my body couldn't contain it.","I'm a ghostly evolution of a Pokemon that's been around since Gen 1.","I'm Primeape's new evolution, fuelled by pure undying rage."]},
+  {name:"Ceruledge",types:["Fire","Ghost"],gen:9,game:"Scarlet/Violet",category:"Fire Blades Pokemon",height:"1.6m",weight:"62.0kg",clues:["My swords burn with ghostly flames made from grudges.","I'm clad in old armour and fight with twin fire blades.","I'm a Fire/Ghost knight from the Paldea region, exclusive to Pokemon Violet."]},
+  {name:"Armarouge",types:["Fire","Psychic"],gen:9,game:"Scarlet/Violet",category:"Fire Warrior Pokemon",height:"1.5m",weight:"85.0kg",clues:["I wear armour made from a powerful psychic Pokemon.","I channel fire energy through my armour to launch ranged attacks.","I'm a Fire/Psychic armoured warrior from Paldea, exclusive to Pokemon Scarlet."]},
+];
+
+const MINECRAFT = [
+  {name:"Creeper",types:["Hostile"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"1.7 blocks",weight:"Unknown",clues:["I sneak up behind you and make a hissing sound before I explode.","I'm green and have four legs but no arms.","I'm probably the most iconic mob in my game and I appear on the merchandise everywhere."]},
+  {name:"Enderman",types:["Neutral"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"2.9 blocks",weight:"Unknown",clues:["I teleport away when you hurt me or when it rains.","Don't look at my face or I'll attack you.","I'm tall, dark, and I carry blocks around. I come from a place called The End."]},
+  {name:"Zombie",types:["Hostile","Undead"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"1.95 blocks",weight:"Unknown",clues:["I burn in the sunlight unless I'm wearing a helmet.","I groan and shamble towards you with my arms stretched out.","I'm one of the most common monsters you'll find at night in the Overworld."]},
+  {name:"Skeleton",types:["Hostile","Undead"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"1.99 blocks",weight:"Unknown",clues:["I shoot arrows at you from a distance and I'm a pretty good shot.","I rattle my bones as I walk around in the dark.","I burn in sunlight, just like my groaning, green-skinned cousin."]},
+  {name:"Spider",types:["Neutral","Arthropod"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"0.9 blocks",weight:"Unknown",clues:["I can climb straight up walls, which makes me hard to escape.","During the day I'm actually peaceful, but at night I attack.","I have red eyes that glow in the dark, and I'm 2 blocks wide."]},
+  {name:"Ender Dragon",types:["Boss"],franchise:"minecraft",category:"Boss",game:"Java Edition",height:"8 blocks",weight:"Unknown",clues:["I'm the final boss you fight to 'beat' the game.","I fly around healing myself using special crystals on top of towers.","I live in a dark dimension full of tall, thin creatures that teleport."]},
+  {name:"Wither",types:["Boss","Undead"],franchise:"minecraft",category:"Boss",game:"Java Edition",height:"3.5 blocks",weight:"Unknown",clues:["You have to build me out of sand and skulls before I come to life.","I have three heads and I shoot explosive skulls at everything.","I'm the second boss in the game and I drop a special star when defeated."]},
+  {name:"Warden",types:["Hostile"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"2.9 blocks",weight:"Unknown",clues:["I'm completely blind but I can hear and smell you.","I live deep underground in the Deep Dark and I'm the strongest mob in the game.","If you make too much noise near my sculk sensors, I'll come find you."]},
+  {name:"Villager",types:["NPC","Passive"],franchise:"minecraft",category:"NPC",game:"Java Edition",height:"1.95 blocks",weight:"Unknown",clues:["I make 'hmm' and 'huh' sounds and fold my arms together.","I have a big nose and I live in villages with my friends.","You can trade emeralds with me for useful items depending on my job."]},
+  {name:"Iron Golem",types:["Neutral"],franchise:"minecraft",category:"Utility Mob",game:"Java Edition",height:"2.7 blocks",weight:"Unknown",clues:["I was built to protect the villagers from harm.","I'm made of iron blocks and a carved pumpkin head.","I'm huge and strong, and I sometimes hold out a poppy flower."]},
+  {name:"Ghast",types:["Hostile"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"4 blocks",weight:"Unknown",clues:["I float through the air crying, and I shoot fireballs at you.","I'm a huge white cube-shaped creature with tentacles dangling below.","I live in the Nether and my fireballs can be batted back at me."]},
+  {name:"Blaze",types:["Hostile"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"1.8 blocks",weight:"Unknown",clues:["I'm made of floating rods that spin around a fiery core.","You need to defeat me to get the items required to find the final boss.","I live in Nether Fortresses and I shoot fireballs in bursts of three."]},
+  {name:"Pig",types:["Passive"],franchise:"minecraft",category:"Animal",game:"Java Edition",height:"0.9 blocks",weight:"Unknown",clues:["You can put a saddle on me and ride me around using a carrot on a stick.","I'm pink with a flat nose and I oink.","If lightning strikes me, I turn into something much more dangerous."]},
+  {name:"Wolf",types:["Neutral"],franchise:"minecraft",category:"Animal",game:"Java Edition",height:"0.85 blocks",weight:"Unknown",clues:["Give me a bone and I might become your loyal companion forever.","When I'm tamed, I wear a red collar and follow you everywhere.","I'll attack any mob that hurts my owner, and my tail shows my health."]},
+  {name:"Cat",types:["Passive"],franchise:"minecraft",category:"Animal",game:"Java Edition",height:"0.7 blocks",weight:"Unknown",clues:["Creepers and Phantoms are scared of me and won't come near.","I come in 11 different fur patterns and I love to sit on chests and beds.","Tame me with raw cod and I'll sometimes bring you gifts in the morning."]},
+  {name:"Axolotl",types:["Passive"],franchise:"minecraft",category:"Animal",game:"Java Edition",height:"0.42 blocks",weight:"Unknown",clues:["I come in pink, brown, gold, cyan, and a very rare blue colour.","I'm a real-life endangered animal that was added to the game.","I live in underground water and I'll help you fight underwater mobs."]},
+  {name:"Allay",types:["Passive"],franchise:"minecraft",category:"Utility Mob",game:"Java Edition",height:"0.6 blocks",weight:"Unknown",clues:["Give me an item and I'll fly around collecting more of the same thing for you.","I love music and I dance when I hear a note block playing.","I'm a small blue fairy-like creature that was voted into the game by players."]},
+  {name:"Wither Skeleton",types:["Hostile","Undead"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"2.4 blocks",weight:"Unknown",clues:["I'm a taller, darker version of a common Overworld monster.","If I hit you, I give you a wither effect that turns your health bar black.","I carry a stone sword, I live in Nether Fortresses, and I drop skulls."]},
+  {name:"Pillager",types:["Hostile"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"1.95 blocks",weight:"Unknown",clues:["I'm an outcast from the villages and I lead raids to attack them.","I carry a crossbow and I wear grey clothes.","If you defeat my captain and then visit a village, a raid begins."]},
+  {name:"Phantom",types:["Hostile","Undead"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"0.5 blocks",weight:"Unknown",clues:["I only appear if you haven't slept in a bed for three or more days.","I swoop down from the sky to bite you at night.","I'm a blue, bat-like undead creature and my membrane can be used to repair elytra."]},
+  {name:"Steve",types:["NPC"],franchise:"minecraft",category:"Player Character",game:"Java Edition",height:"1.8 blocks",weight:"Unknown",clues:["I'm the default character you play as when you start a new world.","I have a light blue shirt, dark blue trousers, and brown hair.","I can punch trees, build castles, and fight dragons all in a day's work."]},
+  {name:"Alex",types:["NPC"],franchise:"minecraft",category:"Player Character",game:"Java Edition",height:"1.8 blocks",weight:"Unknown",clues:["I'm the second default player character added to the game.","I have bright orange hair and a green top.","I'm just as capable as my blue-shirted counterpart."]},
+  {name:"Bee",types:["Neutral"],franchise:"minecraft",category:"Animal",game:"Java Edition",height:"0.6 blocks",weight:"Unknown",clues:["I get angry if you break my home or hit me, and my whole group attacks together.","I pollinate flowers and then fly back to my hive to make something sweet.","I'm a chunky, cube-shaped flying insect that buzzes around flower biomes."]},
+  {name:"Sniffer",types:["Passive"],franchise:"minecraft",category:"Animal",game:"Java Edition",height:"1.75 blocks",weight:"Unknown",clues:["I'm an ancient creature that was brought back from extinction using an egg found in the ocean.","I use my big nose to sniff the ground and dig up ancient seeds.","Players voted to add me to the game, and I'm one of the biggest passive mobs."]},
+  {name:"Piglin",types:["Neutral"],franchise:"minecraft",category:"Monster",game:"Java Edition",height:"1.95 blocks",weight:"Unknown",clues:["I live in the Nether and I absolutely love gold.","If you wear golden armour, I won't attack you.","Throw me a gold ingot and I'll give you a random item in return."]},
+];
+
+const BUGSNAX = [
+  {name:"Bunger",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Small",weight:"Light",clues:["I look like a burger with legs and I charge at other Bugsnax.","I shout my own name over and over: 'Bunger! Bunger!'","I'm one of the first Bugsnax you encounter and I live near the beach."]},
+  {name:"Strabby",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Tiny",weight:"Very Light",clues:["I'm shaped like a small red fruit with a green leaf on top.","I'm one of the very first Bugsnax you learn to catch in the tutorial.","I waddle around slowly and I'm not very hard to trap at all."]},
+  {name:"Kweeble",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Small",weight:"Light",clues:["I look like a kiwi fruit with bird legs.","I'm fuzzy, brown on the outside, and green on the inside.","I roll around and I'm found in the garden area."]},
+  {name:"Fryder",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Small",weight:"Light",clues:["I'm a spider made out of french fries.","I have eight crispy legs and I hang from webs.","You might find me creepy, but I'm actually delicious."]},
+  {name:"Sandopede",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Long",weight:"Medium",clues:["I'm a centipede made out of a long sandwich.","I burrow underground and pop up to surprise you.","I live in the desert area and I'm pretty tricky to catch."]},
+  {name:"Scoopy Banoopy",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Medium",weight:"Light",clues:["I'm a flying ice cream cone with banana-shaped wings.","I soar through the air and you need to knock me down to catch me.","My name is fun to say and I'm made of frozen treats."]},
+  {name:"Buffalocust",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Large",weight:"Heavy",clues:["I'm a massive flying Bugsnax that looks like buffalo wings with locust parts.","I swarm in groups and I can be really intimidating.","I'm one of the bigger, more aggressive Bugsnax to catch."]},
+  {name:"Megamaki",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Large",weight:"Heavy",clues:["I'm a giant sushi roll that rolls around like a log.","I'm way too big for your normal trap so you need a creative approach.","I contain smaller Bugsnax called Minimaki inside me."]},
+  {name:"Daddy Cakelegs",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Very Large",weight:"Heavy",clues:["I'm one of the legendary Bugsnax and I'm enormous.","I look like a giant cake walking around on long, spindly legs.","My name is a play on 'daddy long legs' and I live on Frosted Peak."]},
+  {name:"Mothza Supreme",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Very Large",weight:"Heavy",clues:["I'm a legendary Bugsnax that looks like a giant pizza moth.","I fly around with huge pizza-slice wings.","I'm one of the boss Bugsnax and my name sounds like 'mozzarella'."]},
+  {name:"Cinnasnail",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Small",weight:"Light",clues:["I'm a snail whose shell is a cinnamon roll.","I leave a sticky, sweet trail behind me as I slide around.","I'm slow and delicious and I live in the Sugarpine Woods."]},
+  {name:"Shishkabug",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Small",weight:"Light",clues:["I look like pieces of food threaded onto a skewer stick.","I'm essentially a walking kebab with little legs.","You can find me near campfire areas and I'm always toasty warm."]},
+  {name:"Cheddaboardle Rex",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Large",weight:"Heavy",clues:["I'm a legendary Bugsnax shaped like a massive cheese board.","I'm one of the biggest challenges in the game to catch.","I stomp around with little dinosaur-like cheese legs."]},
+  {name:"Preying Picantis",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Medium",weight:"Medium",clues:["I'm a praying mantis made out of a spicy pepper.","I'm red, fiery, and I'll set you on fire if you get too close.","My name is a pun on 'praying mantis' and 'picante'."]},
+  {name:"Ribblepede",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Small",weight:"Light",clues:["I'm a centipede made of ridged potato crisps.","I scuttle along walls and ceilings in dark places.","I'm crunchy, salty, and I move in a wavy pattern."]},
+  {name:"Sodie",types:["Grumpus"],franchise:"bugsnax",category:"Bugsnax",game:"Bugsnax",height:"Small",weight:"Light",clues:["I'm a little Bugsnax that looks like a fizzy drink can with legs.","I pop and fizz as I walk around.","Catch me and you'll get a refreshing snack."]},
+];
+
+const MARIO = [
+  {name:"Mario",types:["Hero"],franchise:"mario",category:"Plumber",game:"Super Mario Bros.",height:"155cm",weight:"Unknown",clues:["I'm a plumber from Brooklyn who saves a princess over and over.","I wear a red cap with my initial on it and have a big moustache.","I'm the most famous video game character of all time, created by Nintendo."]},
+  {name:"Luigi",types:["Hero"],franchise:"mario",category:"Plumber",game:"Super Mario Bros.",height:"175cm",weight:"Unknown",clues:["I'm taller and thinner than my more famous brother.","I wear green and I'm known for being a bit more scared of ghosts.","I star in my own ghost-hunting series called Luigi's Mansion."]},
+  {name:"Princess Peach",types:["Hero","Ally"],franchise:"mario",category:"Royalty",game:"Super Mario Bros.",height:"Unknown",weight:"Unknown",clues:["I rule the Mushroom Kingdom and I'm always getting kidnapped.","I wear a pink dress and a crown, and I'm friends with a mushroom-headed helper.","In one recent game I finally got my own solo adventure."]},
+  {name:"Bowser",types:["Villain","Boss"],franchise:"mario",category:"Koopa King",game:"Super Mario Bros.",height:"Unknown",weight:"Unknown",clues:["I'm the king of the Koopas and I breathe fire.","I kidnap a certain princess over and over because I want to rule her kingdom.","I'm a giant spiky-shelled turtle-dragon and the main villain of my series."]},
+  {name:"Toad",types:["Ally"],franchise:"mario",category:"Mushroom Retainer",game:"Super Mario Bros.",height:"Small",weight:"Unknown",clues:["I have a mushroom cap on my head and I serve the princess.","I'm always saying 'Thank you, but our princess is in another castle!'","I'm a small, cheerful guy who runs the Mushroom Kingdom's various shops and houses."]},
+  {name:"Yoshi",types:["Hero","Ally"],franchise:"mario",category:"Dinosaur",game:"Super Mario World",height:"Unknown",weight:"Unknown",clues:["I can eat enemies with my long, sticky tongue and turn them into eggs.","I come in many different colours but green is my most famous look.","I'm a friendly dinosaur who lets a certain plumber ride on my back."]},
+  {name:"Donkey Kong",types:["Hero","Neutral"],franchise:"mario",category:"Ape",game:"Donkey Kong",height:"Unknown",weight:"Unknown",clues:["I started out as a villain throwing barrels at a carpenter.","I wear a red necktie with my initials on it.","I'm a big, strong gorilla who loves bananas."]},
+  {name:"Wario",types:["Villain"],franchise:"mario",category:"Anti-Hero",game:"Super Mario Land 2",height:"Unknown",weight:"Unknown",clues:["I'm a greedy, smelly version of a certain famous plumber.","I wear yellow and purple, and I have a zigzag moustache.","My name combines 'bad' in Japanese with another famous character's name."]},
+  {name:"Waluigi",types:["Villain"],franchise:"mario",category:"Anti-Hero",game:"Mario Tennis",height:"Unknown",weight:"Unknown",clues:["I'm tall, thin, and I always feel like I'm left out of the big adventures.","I first appeared in a tennis game as a doubles partner for a greedy rival.","I wear purple and I have a pointy moustache and an upside-down L on my cap."]},
+  {name:"Goomba",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros.",height:"Small",weight:"Unknown",clues:["I'm the very first enemy you ever meet in the original game.","I'm a small brown mushroom-like creature with angry eyebrows and no arms.","Just one jump on my head is enough to defeat me."]},
+  {name:"Koopa Troopa",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros.",height:"Small",weight:"Unknown",clues:["When you jump on me, I hide in my shell and you can kick it.","I'm a turtle that walks back and forth along platforms.","I come in green and red varieties, and the red ones are smarter about edges."]},
+  {name:"Boo",types:["Hostile"],franchise:"mario",category:"Ghost",game:"Super Mario Bros. 3",height:"Small",weight:"Unknown",clues:["I freeze and cover my face when you look at me.","I'm a round white ghost with sharp little fangs.","I live in haunted houses and I only chase you when your back is turned."]},
+  {name:"Chain Chomp",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros. 3",height:"Medium",weight:"Heavy",clues:["I'm chained to a post and I lunge at anyone who gets close.","I'm basically a giant metal ball with sharp teeth.","I bark like a dog and my creator based me on a scary dog from his childhood."]},
+  {name:"Piranha Plant",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros.",height:"Medium",weight:"Unknown",clues:["I live inside green pipes and I pop up to try to bite you.","I'm a carnivorous plant with white spots and sharp teeth.","I even became a playable fighter in a famous crossover fighting game."]},
+  {name:"Shy Guy",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros. 2",height:"Small",weight:"Unknown",clues:["I wear a mask and a robe and nobody knows what's underneath.","I first appeared in a game that was originally a completely different game in Japan.","I come in many colours, and I waddle around in all sorts of Mario games."]},
+  {name:"Bowser Jr.",types:["Villain"],franchise:"mario",category:"Koopa Prince",game:"Super Mario Sunshine",height:"Small",weight:"Unknown",clues:["I'm the son of the big bad villain and I want to impress my dad.","I ride around in a little flying machine with a clown face on it.","I wear a bandana over my mouth and I first appeared on a tropical island."]},
+  {name:"Rosalina",types:["Ally"],franchise:"mario",category:"Cosmic Guardian",game:"Super Mario Galaxy",height:"Tall",weight:"Unknown",clues:["I watch over the cosmos from a spaceship that looks like an observatory.","I take care of small star-shaped creatures called Lumas.","I'm a tall, elegant figure in a cyan dress with a fringe covering one eye."]},
+  {name:"Kamek",types:["Villain"],franchise:"mario",category:"Magikoopa",game:"Super Mario World 2",height:"Small",weight:"Unknown",clues:["I'm an old wizard who rides a broomstick.","I've been trying to stop a certain hero since he was a baby.","I'm a Magikoopa who serves as the main villain's top advisor."]},
+  {name:"Lakitu",types:["Neutral"],franchise:"mario",category:"Koopa",game:"Super Mario Bros.",height:"Small",weight:"Unknown",clues:["I ride on a cloud and throw spiny eggs down at you.","In some games I hold a camera on a fishing rod and film the action.","I'm a Koopa with goggles who floats above the action."]},
+  {name:"Bullet Bill",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros.",height:"Medium",weight:"Unknown",clues:["I'm fired out of a cannon and I fly straight towards you.","I'm a large black bullet with angry eyes and white arms.","In some games, you can ride on top of me if you're brave enough."]},
+  {name:"Toadette",types:["Ally"],franchise:"mario",category:"Mushroom Retainer",game:"Mario Kart: Double Dash",height:"Small",weight:"Unknown",clues:["I'm a cheerful girl with pink mushroom pigtails.","I'm best friends with a certain small mushroom-headed boy.","I can use a special crown power-up to transform into a princess-like form."]},
+  {name:"King Boo",types:["Villain","Boss"],franchise:"mario",category:"Ghost King",game:"Luigi's Mansion",height:"Large",weight:"Unknown",clues:["I'm the ruler of all the ghosts and I wear a jewelled crown.","I'm the main villain in a series of games where a green plumber hunts ghosts.","I'm a giant version of those round white ghosts with a sinister purple tongue."]},
+  {name:"Dry Bones",types:["Hostile","Undead"],franchise:"mario",category:"Skeleton",game:"Super Mario Bros. 3",height:"Small",weight:"Unknown",clues:["I'm a skeletal version of a common turtle enemy.","If you jump on me I collapse, but I rebuild myself after a few seconds.","I rattle my bones as I patrol castles and fortresses."]},
+  {name:"Bob-omb",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros. 2",height:"Small",weight:"Unknown",clues:["I'm a walking bomb with a wind-up key on my back.","My fuse lights up and then I explode after a few seconds.","I have big white eyes and little feet, and I appear in nearly every Mario game."]},
+  {name:"Thwomp",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros. 3",height:"Large",weight:"Very Heavy",clues:["I'm a giant stone block with an angry face.","I hover in the air and slam down when you try to walk underneath me.","I live in castles and fortresses and I make a huge crash when I land."]},
+];
+
+// ── Combine all characters ──
+function getAllCharacters(){
+  const all = [];
+  POKEMON.forEach(p => all.push({...p, franchise:'pokemon'}));
+  MINECRAFT.forEach(m => all.push({...m, franchise:'minecraft'}));
+  BUGSNAX.forEach(b => all.push({...b, franchise:'bugsnax'}));
+  MARIO.forEach(m => all.push({...m, franchise:'mario'}));
+  return all;
+}
+
+const ALL_CHARACTERS = getAllCharacters();
+
+// ── State ──
+let current = null;
+let cluesRevealed = 0;
+let showingFavs = false;
+let activeFranchises = new Set(); // tracks which are toggled OFF
+let activeGens = new Set();
+let roundWinnerRecorded = false;
+
+// Shuffle bag for no-repeat random
+let shuffleBag = [];
+let lastPoolKey = '';
+
+// ── Firebase config ──
+const FB_DB = 'https://bath-n-guess-default-rtdb.europe-west1.firebasedatabase.app';
+
+// ── localStorage helpers (local data: seen, favourites, totalPlayed) ──
+const STORE_KEY = 'pokemon_guess_v2';
+function loadData(){
+  try{
+    const d = JSON.parse(localStorage.getItem(STORE_KEY));
+    if(d) return d;
+    const old = JSON.parse(localStorage.getItem('pokemon_guess_v1'));
+    if(old) return {...old, scores:{mum:0,dad:0,aiden:0}};
+    return {seen:[],favourites:[],totalPlayed:0,scores:{mum:0,dad:0,aiden:0}};
+  }catch{return {seen:[],favourites:[],totalPlayed:0,scores:{mum:0,dad:0,aiden:0}}}
+}
+function saveData(d){localStorage.setItem(STORE_KEY,JSON.stringify(d))}
+
+// ── Firebase score sync ──
+let cloudScores = {mum:0,dad:0,aiden:0};
+
+async function fbLoadScores(){
+  try{
+    const r = await fetch(FB_DB+'/scores.json');
+    const data = await r.json();
+    if(data && typeof data.mum==='number'){
+      cloudScores = data;
+      // Sync to local
+      const local = loadData();
+      local.scores = {...cloudScores};
+      saveData(local);
+      updateScoreboardUI();
+    }
+  }catch(e){console.log('Firebase read failed, using local scores');}
+}
+
+async function fbSaveScores(scores){
+  cloudScores = {...scores};
+  try{
+    await fetch(FB_DB+'/scores.json',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(scores)
+    });
+  }catch(e){console.log('Firebase write failed, scores saved locally');}
+}
+
+// Poll for score changes every 5 seconds so both phones stay in sync
+setInterval(fbLoadScores, 5000);
+
+// ── Init ──
+function init(){
+  buildFranchiseFilter();
+  buildGenFilter();
+  updateStats();
+  fbLoadScores(); // load shared scores from Firebase
+  renderHistory();
+}
+
+function buildFranchiseFilter(){
+  const el = document.getElementById('franchise-filter');
+  const franchises = [
+    {id:'pokemon',label:'Pokemon',cls:'pokemon'},
+    {id:'minecraft',label:'Minecraft',cls:'minecraft'},
+    {id:'bugsnax',label:'Bugsnax',cls:'bugsnax'},
+    {id:'mario',label:'Mario',cls:'mario'},
+  ];
+  franchises.forEach(f=>{
+    const btn = document.createElement('button');
+    btn.className = 'fran-btn active '+f.cls;
+    btn.textContent = f.label;
+    btn.dataset.franchise = f.id;
+    btn.onclick = ()=>{
+      btn.classList.toggle('active');
+      if(btn.classList.contains('active')){
+        // Was toggled back ON
+        activeFranchises.delete(f.id);
+      }else{
+        // Toggled OFF
+        activeFranchises.add(f.id);
+      }
+      // Ensure at least one franchise remains active
+      if(activeFranchises.size >= franchises.length){
+        // Can't turn off all - re-enable this one
+        activeFranchises.delete(f.id);
+        btn.classList.add('active');
+        return;
+      }
+      updateGenFilterVisibility();
+      resetShuffleBag();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function updateGenFilterVisibility(){
+  const pokemonOff = activeFranchises.has('pokemon');
+  document.getElementById('gen-filter').style.display = pokemonOff ? 'none' : '';
+  document.getElementById('gen-label').style.display = pokemonOff ? 'none' : '';
+}
+
+function buildGenFilter(){
+  const gens = [...new Set(POKEMON.map(p=>p.gen))].sort((a,b)=>a-b);
+  const el = document.getElementById('gen-filter');
+  const allBtn = document.createElement('button');
+  allBtn.className = 'gen-btn active';
+  allBtn.textContent = 'All';
+  allBtn.id = 'gen-all';
+  allBtn.onclick = ()=>{
+    activeGens.clear();
+    document.querySelectorAll('.gen-btn').forEach(b=>b.classList.remove('active'));
+    allBtn.classList.add('active');
+    resetShuffleBag();
+  };
+  el.appendChild(allBtn);
+  gens.forEach(g=>{
+    const btn = document.createElement('button');
+    btn.className = 'gen-btn';
+    btn.textContent = 'Gen '+g;
+    btn.onclick = ()=>{
+      document.getElementById('gen-all').classList.remove('active');
+      if(activeGens.has(g)){activeGens.delete(g);btn.classList.remove('active')}
+      else{activeGens.add(g);btn.classList.add('active')}
+      if(activeGens.size===0) document.getElementById('gen-all').classList.add('active');
+      resetShuffleBag();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function getPool(){
+  let pool = ALL_CHARACTERS;
+  // Filter by franchise (activeFranchises tracks which are OFF)
+  if(activeFranchises.size > 0){
+    pool = pool.filter(c => !activeFranchises.has(c.franchise));
+  }
+  // Filter Pokemon by gen if specific gens selected
+  if(activeGens.size > 0){
+    pool = pool.filter(c => {
+      if(c.franchise === 'pokemon') return activeGens.has(c.gen);
+      return true;
+    });
+  }
+  return pool;
+}
+
+// ── Shuffle bag for no-repeat random ──
+function getPoolKey(){
+  return JSON.stringify([...activeFranchises].sort()) + '|' + JSON.stringify([...activeGens].sort());
+}
+
+function resetShuffleBag(){
+  shuffleBag = [];
+  lastPoolKey = '';
+}
+
+function pickFromShuffleBag(pool){
+  const key = getPoolKey();
+  if(key !== lastPoolKey || shuffleBag.length === 0){
+    // Refill with Fisher-Yates shuffle
+    shuffleBag = pool.map((_,i) => i);
+    for(let i = shuffleBag.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffleBag[i], shuffleBag[j]] = [shuffleBag[j], shuffleBag[i]];
+    }
+    lastPoolKey = key;
+  }
+  return pool[shuffleBag.pop()];
+}
+
+function pickRandom(){
+  const pool = getPool();
+  if(pool.length===0) return;
+
+  current = pickFromShuffleBag(pool);
+  cluesRevealed = 0;
+  roundWinnerRecorded = false;
+
+  // Reset UI
+  document.getElementById('game-area').classList.remove('hidden');
+  for(let i=1;i<=3;i++){
+    const card = document.getElementById('clue-'+i);
+    card.classList.add('locked');
+    card.classList.remove('revealed');
+    document.getElementById('clue-text-'+i).textContent = current.clues[i-1];
+  }
+
+  showCharacterFacts();
+
+  // Track
+  const data = loadData();
+  if(!data.seen.includes(current.name)) data.seen.push(current.name);
+  data.totalPlayed++;
+  saveData(data);
+  updateStats();
+  renderHistory();
+
+  document.getElementById('game-area').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function showCharacterFacts(){
+  const reveal = document.getElementById('pokemon-reveal');
+  reveal.classList.remove('hidden');
+  document.getElementById('pokemon-name').textContent = current.name;
+
+  const grid = document.getElementById('facts-grid');
+  grid.innerHTML = '';
+
+  const franchiseLabels = {pokemon:'Pokemon',minecraft:'Minecraft',bugsnax:'Bugsnax',mario:'Mario'};
+
+  const facts = [
+    {label:'Type',value:current.types,isType:true},
+    {label:'Category',value:current.category},
+    {label:'Franchise',value:franchiseLabels[current.franchise]||current.franchise},
+    {label:'Game',value:current.game},
+    {label:'Height',value:current.height},
+    {label:'Weight',value:current.weight},
+  ];
+  if(current.gen) facts.splice(3,0,{label:'Generation',value:'Gen '+current.gen});
+
+  facts.forEach(f=>{
+    const div = document.createElement('div');
+    div.className = 'fact';
+    if(f.isType){
+      div.innerHTML = '<div class="fact-label">'+f.label+'</div><div class="type-badges">'+f.value.map(t=>'<span class="type-badge type-'+t.toLowerCase()+'">'+t+'</span>').join('')+'</div>';
+    }else{
+      div.innerHTML = '<div class="fact-label">'+f.label+'</div><div class="fact-value">'+f.value+'</div>';
+    }
+    grid.appendChild(div);
+  });
+
+  // Reset winner section
+  document.getElementById('winner-buttons').classList.remove('hidden');
+  document.getElementById('winner-recorded').classList.add('hidden');
+
+  // Update fav button
+  const data = loadData();
+  const isFav = data.favourites.includes(current.name);
+  document.getElementById('btn-fav').textContent = isFav ? 'Remove from Favourites' : 'Add to Favourites';
+}
+
+function revealClue(n){
+  if(n > cluesRevealed+1) return;
+  const card = document.getElementById('clue-'+n);
+  if(card.classList.contains('revealed')) return;
+  card.classList.remove('locked');
+  card.classList.add('revealed');
+  cluesRevealed = n;
+  if(n<3){
+    document.getElementById('clue-'+(n+1)).classList.remove('locked');
+    document.getElementById('clue-'+(n+1)).classList.add('locked');
+  }
+}
+
+// ── Winner system ──
+function recordWinner(who){
+  if(roundWinnerRecorded) return;
+  roundWinnerRecorded = true;
+
+  cloudScores[who]++;
+  // Save to both local and Firebase
+  const data = loadData();
+  data.scores = {...cloudScores};
+  saveData(data);
+  fbSaveScores(cloudScores);
+
+  updateScoreboardUI();
+
+  const names = {mum:'Mum',dad:'Dad',aiden:'Aiden'};
+  document.getElementById('winner-buttons').classList.add('hidden');
+  const recorded = document.getElementById('winner-recorded');
+  recorded.textContent = names[who] + ' gets the point!';
+  recorded.classList.remove('hidden');
+}
+
+function updateScoreboardUI(){
+  document.getElementById('score-mum').textContent = cloudScores.mum;
+  document.getElementById('score-dad').textContent = cloudScores.dad;
+  document.getElementById('score-aiden').textContent = cloudScores.aiden;
+}
+
+function resetScores(){
+  cloudScores = {mum:0,dad:0,aiden:0};
+  const data = loadData();
+  data.scores = {mum:0,dad:0,aiden:0};
+  saveData(data);
+  fbSaveScores(cloudScores);
+  updateScoreboardUI();
+}
+
+function toggleFav(){
+  if(!current) return;
+  const data = loadData();
+  const idx = data.favourites.indexOf(current.name);
+  if(idx===-1){data.favourites.push(current.name)}
+  else{data.favourites.splice(idx,1)}
+  saveData(data);
+  const isFav = data.favourites.includes(current.name);
+  document.getElementById('btn-fav').textContent = isFav ? 'Remove from Favourites' : 'Add to Favourites';
+  renderHistory();
+}
+
+function updateStats(){
+  const data = loadData();
+  document.getElementById('seen-count').textContent = data.seen.length;
+  document.getElementById('total-count').textContent = data.totalPlayed;
+}
+
+function toggleHistory(){
+  showingFavs = !showingFavs;
+  document.getElementById('btn-toggle-hist').textContent = showingFavs ? 'Show Recent' : 'Show Favourites';
+  document.getElementById('history-title').textContent = showingFavs ? 'Favourites' : 'Recently Seen';
+  renderHistory();
+}
+
+function renderHistory(){
+  const data = loadData();
+  const list = showingFavs ? data.favourites : data.seen.slice(-20).reverse();
+  const el = document.getElementById('history-list');
+  el.innerHTML = '';
+  if(list.length===0){
+    el.innerHTML = '<span style="color:var(--dim);font-size:.8rem">'+(showingFavs?'No favourites yet':'No characters seen yet')+'</span>';
+    return;
+  }
+  list.forEach(name=>{
+    const chip = document.createElement('span');
+    chip.className = 'history-chip';
+    chip.textContent = name;
+    el.appendChild(chip);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
