@@ -168,6 +168,8 @@ button:active{transform:scale(.96)}
 .fran-btn.active.minecraft{background:#5d8a3c}
 .fran-btn.active.bugsnax{background:#e67e22}
 .fran-btn.active.mario{background:#e4002b}
+.fran-btn.active.animals{background:#2d8659}
+.fran-btn.active.movies{background:#9b59b6}
 .btn-reset-scores{
   background:#333;color:var(--dim);font-size:.7rem;padding:4px 12px;border-radius:12px;
   border:1px solid #ffffff10;margin-top:4px;
@@ -213,6 +215,11 @@ button:active{transform:scale(.96)}
 .type-arthropod{background:#6b8e23}.type-grumpus{background:#e67e22}
 .type-hero{background:#e4002b}.type-villain{background:#6c3483}.type-power-up{background:#f39c12;color:#333}
 .type-ally{background:#1abc9c}.type-koopaling{background:#229954}
+/* Animal types */
+.type-mammal{background:#8b6914}.type-bird{background:#5dadec}.type-reptile{background:#6b8e23}
+.type-amphibian{background:#2e8b57}.type-invertebrate{background:#9370db}
+/* Movie types */
+.type-sidekick{background:#e67e22}
 </style>
 </head>
 <body>
@@ -500,6 +507,53 @@ const MARIO = [
   {name:"Thwomp",types:["Hostile"],franchise:"mario",category:"Enemy",game:"Super Mario Bros. 3",height:"Large",weight:"Very Heavy",clues:["I'm a giant stone block with an angry face.","I hover in the air and slam down when you try to walk underneath me.","I live in castles and fortresses and I make a huge crash when I land."]},
 ];
 
+const ANIMALS = [
+  {name:"Lion",types:["Mammal"],franchise:"animals",category:"Big Cat",game:"Africa",height:"1.2m (shoulder)",weight:"190kg",clues:["The males in my family have a big fluffy mane around their head.","I'm known as the King of the Jungle, even though I actually live on grasslands.","I live in groups called prides and I can roar loud enough to be heard 8 kilometres away."]},
+  {name:"Emperor Penguin",types:["Bird"],franchise:"animals",category:"Seabird",game:"Antarctica",height:"1.1m",weight:"40kg",clues:["I'm the tallest of all my kind and I live in the coldest place on Earth.","The dads in my species hold an egg on their feet for two months through the winter.","I can't fly, but I'm an amazing swimmer and I waddle around on the ice."]},
+  {name:"Giraffe",types:["Mammal"],franchise:"animals",category:"Herbivore",game:"Africa",height:"5.5m",weight:"1,200kg",clues:["My tongue is about 45 centimetres long and it's dark purple.","I'm the tallest animal alive and I was born by falling nearly two metres to the ground.","I have a very long neck, but it has the same number of bones as yours."]},
+  {name:"Red Panda",types:["Mammal"],franchise:"animals",category:"Small Mammal",game:"Asia",height:"0.6m",weight:"6kg",clues:["I was actually called a panda before the big black and white one was.","I have rusty-red fur and a long stripy tail that I wrap around myself to keep warm.","I live in the misty mountains of Asia and I spend most of my time in trees."]},
+  {name:"Elephant",types:["Mammal"],franchise:"animals",category:"Herbivore",game:"Africa / Asia",height:"3.3m (shoulder)",weight:"6,000kg",clues:["I'm the heaviest land animal alive and my brain is bigger than any other land animal's.","I use my long nose to breathe, grab food, suck up water, and even give myself a shower.","I have huge flapping ears and I live in herds led by the oldest female."]},
+  {name:"Crocodile",types:["Reptile"],franchise:"animals",category:"Predator",game:"Africa / Australia",height:"0.5m (body height)",weight:"1,000kg",clues:["I've barely changed in over 200 million years, so I lived alongside the dinosaurs.","I float in the water with just my eyes and nostrils showing, waiting to ambush prey.","I have the strongest bite of any animal alive and a mouth full of sharp teeth."]},
+  {name:"Cheetah",types:["Mammal"],franchise:"animals",category:"Big Cat",game:"Africa",height:"0.9m (shoulder)",weight:"60kg",clues:["I can go from standing still to 100 km/h in just three seconds.","I have black 'tear marks' running from my eyes down to my mouth.","I'm the fastest land animal on the planet but I can only sprint for short bursts."]},
+  {name:"Gorilla",types:["Mammal"],franchise:"animals",category:"Primate",game:"Africa",height:"1.7m",weight:"220kg",clues:["I'm the largest living primate and I share about 98% of my DNA with humans.","The old males in my group develop silver fur on their backs as they age.","I live in family groups in the rainforests and mountains of Africa and I'm actually very gentle."]},
+  {name:"Polar Bear",types:["Mammal"],franchise:"animals",category:"Predator",game:"Arctic",height:"1.5m (shoulder)",weight:"700kg",clues:["My fur looks white but each hair is actually transparent and hollow.","I'm the largest land carnivore and I can smell a seal from over a kilometre away.","I live in the Arctic, I'm an excellent swimmer, and my skin underneath my fur is black."]},
+  {name:"Flamingo",types:["Bird"],franchise:"animals",category:"Wading Bird",game:"Americas / Africa",height:"1.4m",weight:"3.5kg",clues:["I'm born with grey feathers but I turn a bright colour because of what I eat.","I stand on one leg most of the time and nobody is completely sure why.","I'm a tall pink bird that lives in huge flocks near shallow lakes."]},
+  {name:"Giant Panda",types:["Mammal"],franchise:"animals",category:"Bear",game:"China",height:"0.9m (shoulder)",weight:"120kg",clues:["I eat almost nothing but bamboo and I munch through about 38 kilograms a day.","I'm black and white and one of the most famous endangered animals in the world.","I'm the symbol of a big wildlife charity and I live in the mountains of China."]},
+  {name:"Chameleon",types:["Reptile"],franchise:"animals",category:"Lizard",game:"Madagascar / Africa",height:"0.3m",weight:"0.2kg",clues:["My eyes can swivel independently so I can look in two directions at once.","I catch insects by shooting out my tongue, which is sometimes longer than my body.","I'm famous for changing colour, but I do it mostly to communicate, not to hide."]},
+  {name:"Grey Wolf",types:["Mammal"],franchise:"animals",category:"Predator",game:"North America / Europe",height:"0.8m (shoulder)",weight:"45kg",clues:["I howl to communicate with my pack from far away.","I'm the ancestor of every single pet dog in the world.","I live and hunt in packs with a strict family hierarchy and I can run for hours."]},
+  {name:"Komodo Dragon",types:["Reptile"],franchise:"animals",category:"Lizard",game:"Indonesia",height:"0.3m (body height)",weight:"70kg",clues:["I'm the biggest lizard in the world and I can grow up to 3 metres long.","My bite is venomous and my saliva is full of nasty bacteria.","I live on a few small islands in Indonesia and I can eat up to 80% of my body weight in one meal."]},
+  {name:"Meerkat",types:["Mammal"],franchise:"animals",category:"Small Mammal",game:"Southern Africa",height:"0.3m",weight:"0.7kg",clues:["I stand up on my back legs and watch for eagles and jackals while my family eats.","I live in big underground tunnel systems in the desert with up to 30 of my family.","I'm a small, sociable mongoose with dark eye patches that work like built-in sunglasses."]},
+  {name:"Octopus",types:["Invertebrate"],franchise:"animals",category:"Marine Animal",game:"Oceans Worldwide",height:"Variable",weight:"15kg (Giant Pacific)",clues:["I have three hearts and blue blood.","I can squeeze through any gap bigger than my beak, which is the only hard part of my body.","I have eight arms, I can change colour instantly, and I squirt ink to escape predators."]},
+  {name:"Snow Leopard",types:["Mammal"],franchise:"animals",category:"Big Cat",game:"Central Asia",height:"0.6m (shoulder)",weight:"50kg",clues:["I live high up in the mountains of Central Asia where it's freezing cold.","My thick tail is almost as long as my body and I wrap it around my face to keep warm.","I'm called the 'ghost of the mountains' because I'm so hard to spot in the wild."]},
+  {name:"Sloth",types:["Mammal"],franchise:"animals",category:"Small Mammal",game:"Central / South America",height:"0.6m",weight:"6kg",clues:["I move so slowly that algae actually grows on my fur, turning it a bit green.","I spend almost my entire life hanging upside down in the trees.","I sleep up to 20 hours a day and I only come down from my tree about once a week."]},
+  {name:"Poison Dart Frog",types:["Amphibian"],franchise:"animals",category:"Frog",game:"Central / South America",height:"0.05m",weight:"0.03kg",clues:["I'm one of the most toxic animals on the planet, but only in the wild.","Indigenous people once used my skin toxin on the tips of their blowdarts.","I'm tiny but I come in incredibly bright colours like blue, yellow, red, and orange."]},
+  {name:"Hippopotamus",types:["Mammal"],franchise:"animals",category:"Herbivore",game:"Africa",height:"1.5m (shoulder)",weight:"3,200kg",clues:["I spend most of my day submerged in rivers and lakes to keep cool.","I'm actually one of the most dangerous large animals in Africa despite eating only plants.","I can open my mouth almost 180 degrees wide and my closest living relatives are whales."]},
+  {name:"Eagle Owl",types:["Bird"],franchise:"animals",category:"Bird of Prey",game:"Europe / Asia",height:"0.75m",weight:"4kg",clues:["I have huge orange eyes and two big feathery tufts on my head that look like ears.","I fly almost silently thanks to the special edges on my feathers.","I'm one of the largest owls in the world and I hunt at night."]},
+];
+
+const MOVIES = [
+  {name:"Simba",types:["Hero"],franchise:"movies",category:"Disney Character",game:"The Lion King",height:"Unknown",weight:"Unknown",clues:["I ran away from home because I thought I caused a terrible tragedy.","My two best friends taught me a philosophy that means 'no worries'.","I'm a lion cub who grows up to become king, just like my father before me."]},
+  {name:"Elsa",types:["Hero"],franchise:"movies",category:"Disney Character",game:"Frozen",height:"Unknown",weight:"Unknown",clues:["I accidentally froze my entire kingdom in the middle of summer.","I built myself an ice palace on a mountain and sang a song the whole world knows.","I'm a queen with magical ice powers and my sister never gave up on me."]},
+  {name:"Gru",types:["Hero","Villain"],franchise:"movies",category:"Animated Character",game:"Despicable Me",height:"Unknown",weight:"Unknown",clues:["I used to be a supervillain but three little girls changed my life.","I have a long pointy nose, a bald head, and I speak with a funny accent.","I command an army of small yellow creatures and I once tried to steal the moon."]},
+  {name:"Kevin the Minion",types:["Ally"],franchise:"movies",category:"Animated Character",game:"Minions",height:"Unknown",weight:"Unknown",clues:["I'm the tallest and the leader of my little group of three.","I went on a quest to find the greatest villain in the world for my tribe to serve.","I'm a yellow, pill-shaped creature who wears dungarees and goggles."]},
+  {name:"Woody",types:["Hero"],franchise:"movies",category:"Pixar Character",game:"Toy Story",height:"Unknown",weight:"Unknown",clues:["I have a pull string on my back that makes me say my catchphrases.","I got very jealous when a new space-themed toy arrived and replaced me as the favourite.","I'm a cowboy doll and my owner's name is written on the bottom of my boot."]},
+  {name:"Buzz Lightyear",types:["Hero"],franchise:"movies",category:"Pixar Character",game:"Toy Story",height:"Unknown",weight:"Unknown",clues:["When I first arrived, I genuinely believed I was the real thing, not a toy.","My catchphrase is about going somewhere very, very far.","I'm a space ranger action figure with pop-out wings and a laser."]},
+  {name:"Moana",types:["Hero"],franchise:"movies",category:"Disney Character",game:"Moana",height:"Unknown",weight:"Unknown",clues:["The ocean literally chose me for a special mission when I was a toddler.","I sailed across the Pacific to find a demigod and make him fix what he broke.","I'm the daughter of a Polynesian chief and the sea is my best friend."]},
+  {name:"Maui",types:["Hero","Ally"],franchise:"movies",category:"Disney Character",game:"Moana",height:"Unknown",weight:"Unknown",clues:["I pulled up islands from the sea and lassoed the sun to slow it down.","My magical fishhook lets me shapeshift into any animal.","I'm a demigod covered in living tattoos who sings about how great I am."]},
+  {name:"Lightning McQueen",types:["Hero"],franchise:"movies",category:"Pixar Character",game:"Cars",height:"Unknown",weight:"Unknown",clues:["I'm number 95 and I'm painted bright red with a lightning bolt on my side.","I got lost in a small desert town on the way to the biggest race of my life.","I'm a cocky rookie race car who learned that life isn't just about winning."]},
+  {name:"Shrek",types:["Hero"],franchise:"movies",category:"Animated Character",game:"Shrek",height:"Unknown",weight:"Unknown",clues:["I live alone in a swamp and I just want everyone to leave me alone.","I rescued a princess from a tower guarded by a dragon, but I'm no Prince Charming.","I'm a big green ogre with layers, like an onion."]},
+  {name:"Stitch",types:["Hero"],franchise:"movies",category:"Disney Character",game:"Lilo & Stitch",height:"Unknown",weight:"Unknown",clues:["I was created in a lab as a weapon of destruction but I was adopted as a pet instead.","I'm experiment 626 and I was designed to destroy everything I touch.","I'm a small blue alien who found a family in Hawaii and learned about ohana."]},
+  {name:"Katie Mitchell",types:["Hero"],franchise:"movies",category:"Animated Character",game:"The Mitchells vs. the Machines",height:"Unknown",weight:"Unknown",clues:["I'm a film student heading off to college when a robot apocalypse ruins my road trip.","My family is the last hope for humanity and we're the most dysfunctional people alive.","I make weird short films, I have a pug, and my dinosaur-obsessed brother is my sidekick."]},
+  {name:"Flint Lockwood",types:["Hero"],franchise:"movies",category:"Animated Character",game:"Cloudy with a Chance of Meatballs",height:"Unknown",weight:"Unknown",clues:["I'm a failed inventor who finally created something that actually worked, maybe too well.","My machine shoots food into the sky and it rains down on my town.","I accidentally turned the weather into an all-you-can-eat buffet that went out of control."]},
+  {name:"Remy",types:["Hero"],franchise:"movies",category:"Pixar Character",game:"Ratatouille",height:"Unknown",weight:"Unknown",clues:["I have an incredible sense of smell and taste that's unusual for my species.","I control a human like a puppet by pulling his hair under a chef's hat.","I'm a rat who dreams of being a chef in Paris, despite what everyone thinks."]},
+  {name:"Rapunzel",types:["Hero"],franchise:"movies",category:"Disney Character",game:"Tangled",height:"Unknown",weight:"Unknown",clues:["I was locked in a tower my whole life by a woman pretending to be my mother.","My hair is 21 metres long and it glows when I sing a special song.","I use a frying pan as a weapon and I have a chameleon called Pascal."]},
+  {name:"Dory",types:["Hero","Ally"],franchise:"movies",category:"Pixar Character",game:"Finding Nemo",height:"Unknown",weight:"Unknown",clues:["I can speak whale, or at least I think I can.","I have a condition that means I forget things almost immediately.","I'm a blue tang fish who helped a clownfish dad cross the ocean to find his son."]},
+  {name:"Miguel Rivera",types:["Hero"],franchise:"movies",category:"Pixar Character",game:"Coco",height:"Unknown",weight:"Unknown",clues:["My family banned music for generations because of something a relative did long ago.","I accidentally ended up in the Land of the Dead on the Day of the Dead.","I'm a Mexican boy who dreams of being a musician and I play a famous skeleton's guitar."]},
+  {name:"Baymax",types:["Hero","Ally"],franchise:"movies",category:"Disney Character",game:"Big Hero 6",height:"Unknown",weight:"Unknown",clues:["I was designed to be a personal healthcare companion and I scan people automatically.","I'm inflatable and I look like a giant white marshmallow.","I say 'I am satisfied with my care' and I give very gentle fist bumps."]},
+  {name:"Puss in Boots",types:["Hero"],franchise:"movies",category:"Animated Character",game:"Puss in Boots",height:"Unknown",weight:"Unknown",clues:["I make my eyes go very, very big when I want something and nobody can resist.","I carry a sword, wear a hat and boots, and I have a Spanish accent.","I'm a swashbuckling ginger cat who once teamed up with a green ogre."]},
+  {name:"Olaf",types:["Ally"],franchise:"movies",category:"Disney Character",game:"Frozen",height:"Unknown",weight:"Unknown",clues:["I was accidentally created by someone with magical powers during a song.","I dream about experiencing summer even though it would be very bad for me.","I'm a living snowman with a carrot nose, stick arms, and I like warm hugs."]},
+];
+
 // ── Combine all characters ──
 function getAllCharacters(){
   const all = [];
@@ -507,6 +561,8 @@ function getAllCharacters(){
   MINECRAFT.forEach(m => all.push({...m, franchise:'minecraft'}));
   BUGSNAX.forEach(b => all.push({...b, franchise:'bugsnax'}));
   MARIO.forEach(m => all.push({...m, franchise:'mario'}));
+  ANIMALS.forEach(a => all.push({...a, franchise:'animals'}));
+  MOVIES.forEach(m => all.push({...m, franchise:'movies'}));
   return all;
 }
 
@@ -620,6 +676,8 @@ function buildFranchiseFilter(){
     {id:'minecraft',label:'Minecraft',cls:'minecraft'},
     {id:'bugsnax',label:'Bugsnax',cls:'bugsnax'},
     {id:'mario',label:'Mario',cls:'mario'},
+    {id:'animals',label:'Animals',cls:'animals'},
+    {id:'movies',label:'Movies',cls:'movies'},
   ];
   franchises.forEach(f=>{
     const btn = document.createElement('button');
@@ -762,7 +820,7 @@ function showCharacterFacts(){
   const grid = document.getElementById('facts-grid');
   grid.innerHTML = '';
 
-  const franchiseLabels = {pokemon:'Pokemon',minecraft:'Minecraft',bugsnax:'Bugsnax',mario:'Mario'};
+  const franchiseLabels = {pokemon:'Pokemon',minecraft:'Minecraft',bugsnax:'Bugsnax',mario:'Mario',animals:'Animals',movies:'Movies'};
 
   const facts = [
     {label:'Type',value:current.types,isType:true},
